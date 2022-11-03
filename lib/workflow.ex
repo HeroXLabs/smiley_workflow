@@ -1,4 +1,6 @@
 defmodule Workflow do
+  alias __MODULE__.Template
+
   defmodule Trigger do
     @enforce_keys [:id, :trigger, :context]
     defstruct [:id, :trigger, :context]
@@ -28,6 +30,7 @@ defmodule Workflow do
       @enforce_keys [:phone_number, :text]
       defstruct [:phone_number, :text]
 
+      # TODO: support {{appointment.employees.phone_number}} as phone_number
       @type t :: %__MODULE__{phone_number: binary, text: binary}
     end
 
@@ -60,24 +63,98 @@ defmodule Workflow do
           }
   end
 
+  defmodule NewStepDto do
+    @enforce_keys [:title, :description, :type, :trigger, :action, :value]
+    defstruct [:title, :description, :type, :trigger, :action, :value]
+
+    @type t :: %__MODULE__{
+            title: binary,
+            description: binary,
+            type: binary,
+            trigger: binary | nil,
+            action: binary | nil,
+            value: map | nil
+          }
+  end
+
   defmodule Step do
+    @enforce_keys [:id, :title, :description, :step]
     defstruct [:id, :title, :description, :step]
+
     @type id :: binary
     @type step :: Trigger.t() | Filter.t() | Delay.t() | Action.t()
     @type t :: %__MODULE__{id: id, title: binary, description: binary, step: step}
   end
 
+  defmodule NewTrigger do
+    defstruct [:title, :description, :trigger, :context]
+
+    @type t :: %__MODULE__{title: binary, description: binary, trigger: binary, context: map}
+  end
+
+  defmodule NewScenarioParams do
+    defstruct [:workspace_id, :template_trigger_id]
+
+    @type t :: %__MODULE__{workspace_id: binary, template_trigger_id: binary}
+  end
+
+  defmodule NewScenario do
+    defstruct [:workspace_id, :title, :new_trigger]
+
+    @type t :: %__MODULE__{workspace_id: binary, title: binary, new_trigger: NewTrigger.t()}
+  end
+
+  defmodule NewStepParams do
+    defstruct [:workspace_id, :template_step_id]
+
+    @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
+  end
+
+  defmodule IncompleteFilter do
+    defstruct [:id]
+
+    @type t :: %__MODULE__{id: binary}
+  end
+
   defmodule Scenario do
     defstruct [:id, :workspace_id, :enabled, :title, :trigger_id, :ordered_action_ids, :steps]
 
+    @type id :: binary
+
     @type t :: %__MODULE__{
-            id: binary,
+            id: id,
             workspace_id: binary,
             enabled: boolean,
             title: binary,
             trigger_id: Trigger.trigger(),
             ordered_action_ids: [Step.id()],
             steps: [Step.t()]
+          }
+  end
+
+  # TODO: may not need ScenarioDto
+  defmodule ScenarioDto do
+    defstruct [:id, :workspace_id, :enabled, :title, :trigger, :ordered_action_ids, :steps]
+
+    @type t :: %__MODULE__{
+            id: binary,
+            workspace_id: binary,
+            enabled: boolean,
+            title: binary,
+            trigger: binary,
+            ordered_action_ids: [StepDto.id()],
+            steps: [StepDto.t()]
+          }
+  end
+
+  defmodule NewScenarioDto do
+    defstruct [:workspace_id, :title, :trigger, :steps]
+
+    @type t :: %__MODULE__{
+            workspace_id: binary,
+            title: binary,
+            trigger: binary,
+            steps: [NewStepDto.t()]
           }
   end
 
@@ -91,6 +168,58 @@ defmodule Workflow do
             trigger: Trigger.t(),
             actions: [RunnableAction.t()]
           }
+  end
+
+  def create_new_scenario(%NewScenarioParams{} = params, repository) do
+    params
+    |> new_scenario()
+    |> to_new_scenario_dto()
+    |> repository.create_new_scenario()
+  end
+
+  def new_scenario(%NewScenarioParams{} = params) do
+    trigger_template =
+      Template.triggers
+      |> Enum.find(&(&1.id == params.template_trigger_id))
+
+    if is_nil(trigger_template) do
+      raise "Trigger template not found"
+    end
+
+    %NewScenario{
+      workspace_id: params.workspace_id,
+      title: trigger_template.title <> " workflow",
+      new_trigger: %NewTrigger{
+        title: trigger_template.title,
+        description: trigger_template.description,
+        trigger: trigger_template.trigger,
+        context: trigger_template.context
+      }
+    }
+  end
+
+  def add_step(%NewStepParams{} = params, repository) do
+    step_dto = new_step_dto(params)
+    repository.add_step(params.workspace_id, step_dto)
+  end
+
+  def new_step_dto(%NewStepParams{} = params) do
+    step_template =
+      Template.actions
+      |> Enum.find(&(&1.id == params.template_step_id))
+
+    if is_nil(step_template) do
+      raise "Step template not found"
+    end
+
+    %NewStepDto{
+      title: step_template.title,
+      description: step_template.description,
+      type: "action",
+      trigger: nil,
+      action: step_template.action,
+      value: nil
+    }
   end
 
   @spec compile_scenario(Scenario.t()) :: RunnableScenario.t()
@@ -148,5 +277,24 @@ defmodule Workflow do
         action: action_step.step
       }
     end)
+  end
+
+  @spec to_new_scenario_dto(NewScenario.t()) :: NewScenarioDto.t()
+  defp to_new_scenario_dto(%NewScenario{} = new_scenario) do
+    %NewScenarioDto{
+      workspace_id: new_scenario.workspace_id,
+      title: new_scenario.title,
+      trigger: new_scenario.new_trigger.trigger,
+      steps: [
+        %NewStepDto{
+          title: new_scenario.new_trigger.title,
+          description: new_scenario.new_trigger.description,
+          type: "trigger",
+          trigger: new_scenario.new_trigger.trigger,
+          action: nil,
+          value: new_scenario.new_trigger.context
+        }
+      ]
+    }
   end
 end
