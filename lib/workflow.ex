@@ -177,6 +177,11 @@ defmodule Workflow do
     |> repository.create_new_scenario()
   end
 
+  def add_step(%NewStepParams{} = params, repository) do
+    step_dto = new_step_dto(params)
+    repository.add_step(params.workspace_id, step_dto)
+  end
+
   def new_scenario(%NewScenarioParams{} = params) do
     trigger_template =
       Template.triggers
@@ -196,11 +201,6 @@ defmodule Workflow do
         context: trigger_template.context
       }
     }
-  end
-
-  def add_step(%NewStepParams{} = params, repository) do
-    step_dto = new_step_dto(params)
-    repository.add_step(params.workspace_id, step_dto)
   end
 
   def new_step_dto(%NewStepParams{} = params) do

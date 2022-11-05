@@ -39,9 +39,9 @@ defmodule Workflow.Template do
             %{id: "services", name: "Appointment services", category: "selection"},
             %{id: "employees", name: "Appointment assignees", category: "selection"}
           ],
-          "employee1" => [
-            %{id: "phone_number", name: "Employee1 phone number", category: "string"},
-            %{id: "first_name", name: "Employee1 first name", category: "string"}
+          "employees" => [
+            %{id: "phone_number", name: "Employee phone number", category: "string"},
+            %{id: "first_name", name: "Employee first name", category: "string"}
           ]
         }
       }
@@ -72,5 +72,19 @@ defmodule Workflow.Template do
         action: "send_sms"
       }
     ]
+  end
+
+  def conditions_map() do
+    %{
+      "phone_number" => "string",
+      "first_name" => "string",
+      "tags" => "array",
+      "visits_count" => "number",
+      "last_visit_at" => "date",
+      "check_in.services" => "selection",
+      "appointment.services" => "selection",
+      "employees.phone_number" => "string",
+      "employees.first_name" => "string"
+    }
   end
 end
