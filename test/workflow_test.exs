@@ -19,7 +19,7 @@ defmodule WorkflowTest do
   end
 
   describe "#add_step" do
-    test "adds a step to a scenario" do
+    test "adds an empty filter step to a scenario" do
       expect(Workflow.Repository.Mock, :add_step, fn _scenario_id, step_dto ->
         Jason.encode!(step_dto)
         scenario = build_scenario_dto(step_dto)
@@ -29,6 +29,22 @@ defmodule WorkflowTest do
       params = %NewStepParams{
         workspace_id: "abc",
         template_step_id: "step-filter"
+      }
+
+      {:ok, scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
+      IO.inspect(scenario)
+    end
+
+    test "add an emply delay step to a scenario" do
+      expect(Workflow.Repository.Mock, :add_step, fn _scenario_id, step_dto ->
+        Jason.encode!(step_dto)
+        scenario = build_scenario_dto(step_dto)
+        {:ok, scenario}
+      end)
+
+      params = %NewStepParams{
+        workspace_id: "abc",
+        template_step_id: "step-delay"
       }
 
       {:ok, scenario} = Workflow.add_step(params, Workflow.Repository.Mock)

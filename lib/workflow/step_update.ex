@@ -65,7 +65,7 @@ defmodule Workflow.StepUpdate do
               UpdateFilterStep.new(step, value)
             %Step{step: %Delay{}} ->
               UpdateDelayStep.new(step, value)
-            %Step{step: %Action{}} ->
+            %Step{step: %Action.SendSms{}} ->
               UpdateActionStep.new(step, value)
           end
         end

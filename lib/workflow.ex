@@ -1,6 +1,6 @@
 defmodule Workflow do
   alias __MODULE__.Template
-  alias __MODULE__.Dto.{NewScenarioDto, ScenarioDto, StepDto, NewStepDto}
+  alias __MODULE__.Dto.{NewScenarioDto, ScenarioDto, NewStepDto}
 
   alias Monad.Error
 
@@ -20,23 +20,22 @@ defmodule Workflow do
       end
     end
 
-    @enforce_keys [:id, :type, :context]
-    defstruct [:id, :type, :context]
+    @enforce_keys [:type, :context]
+    defstruct [:type, :context]
 
-    @type t :: %__MODULE__{id: binary, type: TriggerType.t(), context: map}
+    @type t :: %__MODULE__{type: TriggerType.t(), context: map}
 
     # TODO: validate context
-    def new(id, type, context) do
+    def new(type, context) do
       with {:ok, type} <- TriggerType.new(type) do
-        {:ok, %__MODULE__{id: id, type: type, context: context}}
+        {:ok, %__MODULE__{type: type, context: context}}
       end
     end
   end
 
-  defmodule IncompleteFilter do
-    defstruct [:id]
-
-    @type t :: %__MODULE__{id: binary}
+  defmodule IncompleteStep do
+    defstruct []
+    @type t :: %__MODULE__{}
   end
 
   defmodule Filter do
@@ -52,19 +51,19 @@ defmodule Workflow do
       end
     end
 
-    @enforce_keys [:id, :conditions]
-    defstruct [:id, :conditions]
+    @enforce_keys [:conditions]
+    defstruct [:conditions]
 
-    @type t :: %__MODULE__{id: binary, conditions: FilterConditions.t()}
+    @type t :: %__MODULE__{conditions: FilterConditions.t()}
 
-    def new(id, %{"conditions" => raw_conditions}) do
+    def new(%{"conditions" => raw_conditions}) do
       with {:ok, conditions} <- FilterConditions.new(raw_conditions) do
-        {:ok, %__MODULE__{id: id, conditions: conditions}}
+        {:ok, %__MODULE__{conditions: conditions}}
       end
     end
 
-    def new(id, _) do
-      {:ok, %IncompleteFilter{id: id}}
+    def new(_) do
+      {:ok, %IncompleteStep{}}
     end
   end
 
@@ -103,17 +102,21 @@ defmodule Workflow do
       end
     end
 
-    @enforce_keys [:id, :delay_value, :delay_unit]
-    defstruct [:id, :delay_value, :delay_unit]
+    @enforce_keys [:delay_value, :delay_unit]
+    defstruct [:delay_value, :delay_unit]
 
     @type delay_unit :: DelayUnit.t()
-    @type t :: %__MODULE__{id: binary, delay_value: integer, delay_unit: delay_unit}
+    @type t :: %__MODULE__{delay_value: integer, delay_unit: delay_unit}
 
-    def new(id, %{"delay_value" => delay_value, "delay_unit" => delay_unit}) do
+    def new(%{"delay_value" => delay_value, "delay_unit" => delay_unit}) do
       with {:ok, delay_unit} <- DelayUnit.new(delay_unit),
            {:ok, delay_value} <- DelayValue.new(delay_value) do
-        {:ok, %__MODULE__{id: id, delay_value: delay_value, delay_unit: delay_unit}}
+        {:ok, %__MODULE__{delay_value: delay_value, delay_unit: delay_unit}}
       end
+    end
+
+    def new(_) do
+      {:ok, %IncompleteStep{}}
     end
   end
 
@@ -126,17 +129,15 @@ defmodule Workflow do
       @type t :: %__MODULE__{phone_number: binary, text: binary}
     end
 
-    @enforce_keys [:id, :action]
-    defstruct [:id, :action]
-    @type t :: %__MODULE__{id: binary, action: SendSms.t()}
+    @type t :: SendSms.t()
 
-    def new(id, "send_sms", %{
+    def new("send_sms", %{
           "value" => %{"phone_number" => phone_number, "text" => text}
         }) do
-      {:ok, %__MODULE__{id: id, action: %SendSms{phone_number: phone_number, text: text}}}
+      {:ok, %SendSms{phone_number: phone_number, text: text}}
     end
 
-    def new(_, action, value) do
+    def new(action, value) do
       {:error, "Invalid action '#{action}' with value: #{inspect(value)}"}
     end
   end
@@ -233,6 +234,7 @@ defmodule Workflow do
 
   def add_step(%NewStepParams{} = params, repository) do
     step_dto = new_step_dto(params)
+
     repository.add_step(params.workspace_id, step_dto)
     |> Error.map(&ScenarioDto.to_domain/1)
   end
@@ -249,7 +251,13 @@ defmodule Workflow do
     %NewScenario{
       workspace_id: params.workspace_id,
       title: trigger_template.title <> " workflow",
-      trigger: NewTrigger.new(trigger_template.title, trigger_template.description, trigger_template.trigger, trigger_template.context)
+      trigger:
+        NewTrigger.new(
+          trigger_template.title,
+          trigger_template.description,
+          trigger_template.trigger,
+          trigger_template.context
+        )
     }
   end
 

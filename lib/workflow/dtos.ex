@@ -75,20 +75,20 @@ defmodule Workflow.Dto do
       end
     end
 
-    defp build_step(%__MODULE__{id: id, type: "trigger", trigger: trigger, value: value}) do
-      Trigger.new(id, trigger, value)
+    defp build_step(%__MODULE__{type: "trigger", trigger: trigger, value: value}) do
+      Trigger.new(trigger, value)
     end
 
-    defp build_step(%__MODULE__{id: id, type: "action", action: "delay", value: value}) do
-      Delay.new(id, value)
+    defp build_step(%__MODULE__{type: "action", action: "delay", value: value}) do
+      Delay.new(value)
     end
 
-    defp build_step(%__MODULE__{id: id, type: "action", action: "filter", value: value}) do
-      Filter.new(id, value)
+    defp build_step(%__MODULE__{type: "action", action: "filter", value: value}) do
+      Filter.new(value)
     end
 
-    defp build_step(%__MODULE__{id: id, type: "action", action: action, value: value}) do
-      Action.new(id, action, value)
+    defp build_step(%__MODULE__{type: "action", action: action, value: value}) do
+      Action.new(action, value)
     end
   end
 
