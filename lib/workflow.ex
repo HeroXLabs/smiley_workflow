@@ -33,6 +33,12 @@ defmodule Workflow do
     end
   end
 
+  defmodule IncompleteFilter do
+    defstruct [:id]
+
+    @type t :: %__MODULE__{id: binary}
+  end
+
   defmodule Filter do
     defmodule FilterConditions do
       alias Workflow.{TypedConditions, Template}
@@ -55,6 +61,10 @@ defmodule Workflow do
       with {:ok, conditions} <- FilterConditions.new(raw_conditions) do
         {:ok, %__MODULE__{id: id, conditions: conditions}}
       end
+    end
+
+    def new(id, _) do
+      {:ok, %IncompleteFilter{id: id}}
     end
   end
 
@@ -211,12 +221,6 @@ defmodule Workflow do
     defstruct [:workspace_id, :template_step_id]
 
     @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
-  end
-
-  defmodule IncompleteFilter do
-    defstruct [:id]
-
-    @type t :: %__MODULE__{id: binary}
   end
 
   def create_new_scenario(%NewScenarioParams{} = params, repository) do

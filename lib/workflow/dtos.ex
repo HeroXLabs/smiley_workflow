@@ -79,12 +79,12 @@ defmodule Workflow.Dto do
       Trigger.new(id, trigger, value)
     end
 
-    defp build_step(%__MODULE__{id: id, type: "filter", value: value}) do
-      Filter.new(id, value)
+    defp build_step(%__MODULE__{id: id, type: "action", action: "delay", value: value}) do
+      Delay.new(id, value)
     end
 
-    defp build_step(%__MODULE__{id: id, type: "delay", value: value}) do
-      Delay.new(id, value)
+    defp build_step(%__MODULE__{id: id, type: "action", action: "filter", value: value}) do
+      Filter.new(id, value)
     end
 
     defp build_step(%__MODULE__{id: id, type: "action", action: action, value: value}) do
@@ -108,23 +108,23 @@ defmodule Workflow.Dto do
           }
 
     def to_domain(%__MODULE__{} = scenario_dto) do
-      steps =
-        scenario_dto.steps
-        |> Enum.map(&StepDto.to_domain/1)
-        |> Enum.reduce({:ok, []}, fn
-          {:ok, step}, {:ok, steps} -> {:ok, [step | steps]}
-          {:error, error}, _ -> {:error, error}
-        end)
-
-      %Scenario{
-        id: scenario_dto.id,
-        workspace_id: scenario_dto.workspace_id,
-        enabled: scenario_dto.enabled,
-        title: scenario_dto.title,
-        trigger_id: scenario_dto.trigger,
-        ordered_action_ids: scenario_dto.ordered_action_ids,
-        steps: steps
-      }
+      with {:ok, steps} <-
+             scenario_dto.steps
+             |> Enum.map(&StepDto.to_domain/1)
+             |> Enum.reduce({:ok, []}, fn
+               {:ok, step}, {:ok, steps} -> {:ok, [step | steps]}
+               {:error, error}, _ -> {:error, error}
+             end) do
+        %Scenario{
+          id: scenario_dto.id,
+          workspace_id: scenario_dto.workspace_id,
+          enabled: scenario_dto.enabled,
+          title: scenario_dto.title,
+          trigger_id: scenario_dto.trigger,
+          ordered_action_ids: scenario_dto.ordered_action_ids,
+          steps: steps
+        }
+      end
     end
   end
 end
