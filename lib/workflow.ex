@@ -1,6 +1,7 @@
 defmodule Workflow do
   alias __MODULE__.Template
-  alias __MODULE__.Dto.{NewScenarioDto, ScenarioDto, NewStepDto}
+  alias __MODULE__.Dto.{NewScenarioDto, ScenarioDto, NewStepDto, StepDto}
+  alias __MODULE__.StepUpdate
 
   alias Monad.Error
 
@@ -240,16 +241,19 @@ defmodule Workflow do
   end
 
   def add_step(%NewStepParams{} = params, repository) do
-    step_dto = new_step_dto(params)
+    step_dto = new_step_dto(params.template_step_id)
 
     repository.add_step(params.workspace_id, step_dto)
     |> Error.map(&ScenarioDto.to_domain/1)
   end
 
+  def get_step(workspace_id, step_id, repository) do
+    repository.get_step(workspace_id, step_id)
+    |> Error.map(&StepDto.to_domain/1)
+  end
+
   def new_scenario(%NewScenarioParams{} = params) do
-    trigger_template =
-      Template.triggers()
-      |> Enum.find(&(&1.id == params.template_trigger_id))
+    trigger_template = Template.find_trigger(params.template_trigger_id)
 
     if is_nil(trigger_template) do
       raise "Trigger template not found"
@@ -268,23 +272,21 @@ defmodule Workflow do
     }
   end
 
-  def new_step_dto(%NewStepParams{} = params) do
-    step_template =
-      Template.actions()
-      |> Enum.find(&(&1.id == params.template_step_id))
-
-    if is_nil(step_template) do
-      raise "Step template not found"
+  def update_step(%Step{} = step, params, repository) do
+    with {:ok, step_update} <- StepUpdate.new(step, params) do
+      update_step(step_update, repository)
     end
+  end
 
-    %NewStepDto{
-      title: step_template.title,
-      description: step_template.description,
-      type: "action",
-      trigger: nil,
-      action: step_template.action,
-      value: nil
-    }
+  def update_step(%StepUpdate.ReplaceStep{} = update, repository) do
+    step_dto = new_step_dto(update.template_step_id)
+    repository.update_step(update.step.id, step_dto)
+    |> Error.map(&StepDto.to_domain/1)
+  end
+
+  def update_step(%StepUpdate.UpdateStep{} = update, repository) do
+    repository.update_step_value(update.step.id, update.update.value)
+    |> Error.map(&StepDto.to_domain/1)
   end
 
   @spec compile_scenario(Scenario.t()) :: RunnableScenario.t()
@@ -342,5 +344,22 @@ defmodule Workflow do
         action: action_step.step
       }
     end)
+  end
+
+  defp new_step_dto(template_step_id) do
+    step_template = Template.find_action(template_step_id)
+
+    if is_nil(step_template) do
+      raise "Step template not found"
+    end
+
+    %NewStepDto{
+      title: step_template.title,
+      description: step_template.description,
+      type: "action",
+      trigger: nil,
+      action: step_template.action,
+      value: nil
+    }
   end
 end

@@ -91,4 +91,14 @@ defmodule Workflow.Template do
   def conditions_mapping(key) do
     Map.get(conditions_map(), key, :string)
   end
+
+  def find_trigger(template_trigger_id) do
+    triggers()
+    |> Enum.find(&(&1.id == template_trigger_id))
+  end
+
+  def find_action(template_action_id) do
+    actions()
+    |> Enum.find(&(&1.id == template_action_id))
+  end
 end

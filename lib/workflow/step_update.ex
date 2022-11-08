@@ -16,17 +16,18 @@ defmodule Workflow.StepUpdate do
   defmodule UpdateFilter do
     alias Workflow.Filter
 
-    @enforce_keys [:filter]
-    defstruct [:filter]
+    @enforce_keys [:filter, :value]
+    defstruct [:filter, :value]
 
     @type t :: %__MODULE__{
-            filter: Filter.t()
+            filter: Filter.t(),
+            value: map
           }
 
     def new(value) do
       case Filter.new(value) do
         {:ok, %Filter{} = filter} ->
-          {:ok, %__MODULE__{filter: filter}}
+          {:ok, %__MODULE__{filter: filter, value: value}}
 
         _ ->
           {:error, "Invalid filter value"}
@@ -37,17 +38,18 @@ defmodule Workflow.StepUpdate do
   defmodule UpdateDelay do
     alias Workflow.Delay
 
-    @enforce_keys [:delay]
-    defstruct [:delay]
+    @enforce_keys [:delay, :value]
+    defstruct [:delay, :value]
 
     @type t :: %__MODULE__{
-            delay: Delay.t()
+            delay: Delay.t(),
+            value: map
           }
 
     def new(value) do
       case Delay.new(value) do
         {:ok, %Delay{} = delay} ->
-          {:ok, %__MODULE__{delay: delay}}
+          {:ok, %__MODULE__{delay: delay, value: value}}
 
         _ ->
           {:error, "Invalid delay value"}
@@ -58,17 +60,18 @@ defmodule Workflow.StepUpdate do
   defmodule UpdateAction do
     alias Workflow.Action
 
-    @enforce_keys [:action]
-    defstruct [:action]
+    @enforce_keys [:action, :value]
+    defstruct [:action, :value]
 
     @type t :: %__MODULE__{
-            action: Action.t()
+            action: Action.t(),
+            value: map
           }
 
     def new(action_name, value) do
       case Action.new(action_name, value) do
         {:ok, %Action.SendSms{} = action} ->
-          {:ok, %__MODULE__{action: action}}
+          {:ok, %__MODULE__{action: action, value: value}}
 
         _ ->
           {:error, "Invalid action value"}
@@ -76,20 +79,21 @@ defmodule Workflow.StepUpdate do
     end
   end
 
-  def new(%{"id" => id} = params, repository) do
+  def new(%Step{} = step, params) do
     case Map.get(params, "template_step_id") do
       nil ->
-        value = Map.get(params, "value")
+        case Map.get(params, "value") do
+          nil ->
+            {:error, "Invalid step params"}
 
-        with {:ok, step} <- repository.get_step(id),
-             {:ok, update} <- build_update(step, value) do
-          {:ok, %UpdateStep{step: step, update: update}}
+          value ->
+            with {:ok, update} <- build_update(step, value) do
+              {:ok, %UpdateStep{step: step, update: update}}
+            end
         end
 
       template_step_id ->
-        with {:ok, step} <- repository.get_step(id) do
-          {:ok, %ReplaceStep{step: step, template_step_id: template_step_id}}
-        end
+        {:ok, %ReplaceStep{step: step, template_step_id: template_step_id}}
     end
   end
 
