@@ -25,7 +25,7 @@ defmodule Workflow do
 
     @type t :: %__MODULE__{type: TriggerType.t(), context: map}
 
-    # TODO: validate context
+    # Context should be valid as it's from the default templates
     def new(type, context) do
       with {:ok, type} <- TriggerType.new(type) do
         {:ok, %__MODULE__{type: type, context: context}}
@@ -127,18 +127,25 @@ defmodule Workflow do
 
       # TODO: support {{appointment.employees.phone_number}} as phone_number
       @type t :: %__MODULE__{phone_number: binary, text: binary}
+
+      def new(value) do
+        case value do
+          %{"phone_number" => phone_number, "text" => text} ->
+            {:ok, %__MODULE__{phone_number: phone_number, text: text}}
+          _ -> 
+            {:ok, %IncompleteStep{}}
+        end
+      end
     end
 
     @type t :: SendSms.t()
 
-    def new("send_sms", %{
-          "value" => %{"phone_number" => phone_number, "text" => text}
-        }) do
-      {:ok, %SendSms{phone_number: phone_number, text: text}}
+    def new("send_sms", value) do
+      SendSms.new(value)
     end
 
-    def new(action, value) do
-      {:error, "Invalid action '#{action}' with value: #{inspect(value)}"}
+    def new(action, _value) do
+      {:error, "Invalid action: #{action}"}
     end
   end
 

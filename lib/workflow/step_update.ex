@@ -1,57 +1,78 @@
 defmodule Workflow.StepUpdate do
-  alias Workflow.{Step, Filter, Delay, Action, TypedConditions, Template}
+  alias Workflow.{Step, Filter, Delay, Action}
 
   defmodule ReplaceStep do
-    @enforce_keys [:id, :template_step_id]
-    defstruct [:id, :template_step_id]
+    @enforce_keys [:step, :template_step_id]
+    defstruct [:step, :template_step_id]
   end
 
   defmodule UpdateStep do
-    @enforce_keys [:id, :value]
-    defstruct [:id, :value]
+    @enforce_keys [:step, :update]
+    defstruct [:step, :update]
   end
 
-  defmodule UpdateFilterStep do
-    @enforce_keys [:step, :conditions]
-    defstruct [:step, :conditions]
+  @type t :: ReplaceStep.t() | UpdateStep.t()
+
+  defmodule UpdateFilter do
+    alias Workflow.Filter
+
+    @enforce_keys [:filter]
+    defstruct [:filter]
 
     @type t :: %__MODULE__{
-      step: Step.t(),
-      conditions: TypedConditions.t()
-    }
+            filter: Filter.t()
+          }
 
-    def new(step, %{"conditions" => raw_conditions}) do
-      with {:ok, conditions} <- TypedConditions.parse_conditions(raw_conditions, &Template.conditions_mapping/1) do
-        {:ok, %__MODULE__{step: step, conditions: conditions}}
+    def new(value) do
+      case Filter.new(value) do
+        {:ok, %Filter{} = filter} ->
+          {:ok, %__MODULE__{filter: filter}}
+
+        _ ->
+          {:error, "Invalid filter value"}
       end
     end
   end
 
-  defmodule UpdateDelayStep do
-    defstruct [:step, :delay_value, :delay_unit]
+  defmodule UpdateDelay do
+    alias Workflow.Delay
+
+    @enforce_keys [:delay]
+    defstruct [:delay]
 
     @type t :: %__MODULE__{
-      step: Step.t(),
-      delay_value: integer,
-      delay_unit: Delay.delay_unit()
-    }
+            delay: Delay.t()
+          }
 
-    def new(step, %{"delay_value" => delay_value, "delay_unit" => delay_unit}) do
-      {:ok, %__MODULE__{step: step, delay_value: delay_value, delay_unit: delay_unit}}
+    def new(value) do
+      case Delay.new(value) do
+        {:ok, %Delay{} = delay} ->
+          {:ok, %__MODULE__{delay: delay}}
+
+        _ ->
+          {:error, "Invalid delay value"}
+      end
     end
   end
 
-  defmodule UpdateActionStep do
-    defstruct [:step, :value]
+  defmodule UpdateAction do
+    alias Workflow.Action
+
+    @enforce_keys [:action]
+    defstruct [:action]
 
     @type t :: %__MODULE__{
-      step: Step.t(),
-      value: map
-    }
+            action: Action.t()
+          }
 
-    def new(step, value) do
-      # TODO: validate if value matches step
-      {:ok, %__MODULE__{step: step, value: value}}
+    def new(action_name, value) do
+      case Action.new(action_name, value) do
+        {:ok, %Action.SendSms{} = action} ->
+          {:ok, %__MODULE__{action: action}}
+
+        _ ->
+          {:error, "Invalid action value"}
+      end
     end
   end
 
@@ -59,18 +80,29 @@ defmodule Workflow.StepUpdate do
     case Map.get(params, "template_step_id") do
       nil ->
         value = Map.get(params, "value")
-        with {:ok, step} <- repository.get_step(id) do
-          case step do
-            %Step{step: %Filter{}} ->
-              UpdateFilterStep.new(step, value)
-            %Step{step: %Delay{}} ->
-              UpdateDelayStep.new(step, value)
-            %Step{step: %Action.SendSms{}} ->
-              UpdateActionStep.new(step, value)
-          end
+
+        with {:ok, step} <- repository.get_step(id),
+             {:ok, update} <- build_update(step, value) do
+          {:ok, %UpdateStep{step: step, update: update}}
         end
-      template_step_id -> 
-        {:ok, %ReplaceStep{id: id, template_step_id: template_step_id}}
+
+      template_step_id ->
+        with {:ok, step} <- repository.get_step(id) do
+          {:ok, %ReplaceStep{step: step, template_step_id: template_step_id}}
+        end
+    end
+  end
+
+  defp build_update(step, value) do
+    case step do
+      %Step{step: %Filter{}} ->
+        UpdateFilter.new(value)
+
+      %Step{step: %Delay{}} ->
+        UpdateDelay.new(value)
+
+      %Step{step: %Action.SendSms{}} ->
+        UpdateAction.new(step.action, value)
     end
   end
 end
