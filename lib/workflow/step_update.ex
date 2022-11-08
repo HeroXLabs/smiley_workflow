@@ -1,5 +1,5 @@
 defmodule Workflow.StepUpdate do
-  alias Workflow.{Step, Filter, Delay, Action, TypedConditions}
+  alias Workflow.{Step, Filter, Delay, Action, TypedConditions, Template}
 
   defmodule ReplaceStep do
     @enforce_keys [:id, :template_step_id]
@@ -21,7 +21,7 @@ defmodule Workflow.StepUpdate do
     }
 
     def new(step, %{"conditions" => raw_conditions}) do
-      with {:ok, conditions} <- TypedConditions.parse_conditions(raw_conditions, fn _ -> :string end) do
+      with {:ok, conditions} <- TypedConditions.parse_conditions(raw_conditions, &Template.conditions_mapping/1) do
         {:ok, %__MODULE__{step: step, conditions: conditions}}
       end
     end

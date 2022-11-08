@@ -76,15 +76,19 @@ defmodule Workflow.Template do
 
   def conditions_map() do
     %{
-      "phone_number" => "string",
-      "first_name" => "string",
-      "tags" => "array",
-      "visits_count" => "number",
-      "last_visit_at" => "date",
-      "check_in.services" => "selection",
-      "appointment.services" => "selection",
-      "employees.phone_number" => "string",
-      "employees.first_name" => "string"
+      "phone_number" => :string,
+      "first_name" => :string,
+      "tags" => :selection,
+      "visits_count" => :number,
+      "last_visit_at" => :date,
+      "check_in.services" => :selection,
+      "appointment.services" => :selection,
+      "employees.phone_number" => :string,
+      "employees.first_name" => :string
     }
+  end
+
+  def conditions_mapping(key) do
+    Map.get(conditions_map(), key, :string)
   end
 end

@@ -1,28 +1,110 @@
 defmodule Workflow do
   alias __MODULE__.Template
+  alias __MODULE__.Dto.{NewScenarioDto, ScenarioDto, StepDto, NewStepDto}
+
+  alias Monad.Error
 
   defmodule Trigger do
-    @enforce_keys [:id, :trigger, :context]
-    defstruct [:id, :trigger, :context]
+    defmodule TriggerType do
+      @valid_types [:check_in, :cancel_appointment]
+      @type t :: :check_in | :cancel_appointment
 
-    @type trigger :: :check_in | :cancel_appointment
-    @type t :: %__MODULE__{id: binary, trigger: trigger, context: map}
+      def new(raw_type) do
+        type = String.to_atom(raw_type)
+
+        if Enum.member?(@valid_types, type) do
+          {:ok, type}
+        else
+          {:error, "Invalid trigger type: #{raw_type}"}
+        end
+      end
+    end
+
+    @enforce_keys [:id, :type, :context]
+    defstruct [:id, :type, :context]
+
+    @type t :: %__MODULE__{id: binary, type: TriggerType.t(), context: map}
+
+    # TODO: validate context
+    def new(id, type, context) do
+      with {:ok, type} <- TriggerType.new(type) do
+        {:ok, %__MODULE__{id: id, type: type, context: context}}
+      end
+    end
   end
 
   defmodule Filter do
-    alias Workflow.TypedConditions
+    defmodule FilterConditions do
+      alias Workflow.{TypedConditions, Template}
+      @type t :: TypedConditions.t()
+
+      def new(raw_conditions) do
+        with {:ok, conditions} <-
+               TypedConditions.parse_conditions(raw_conditions, &Template.conditions_mapping/1) do
+          {:ok, conditions}
+        end
+      end
+    end
 
     @enforce_keys [:id, :conditions]
     defstruct [:id, :conditions]
-    @type t :: %__MODULE__{id: binary, conditions: TypedConditions.t()}
+
+    @type t :: %__MODULE__{id: binary, conditions: FilterConditions.t()}
+
+    def new(id, %{"conditions" => raw_conditions}) do
+      with {:ok, conditions} <- FilterConditions.new(raw_conditions) do
+        {:ok, %__MODULE__{id: id, conditions: conditions}}
+      end
+    end
   end
 
   defmodule Delay do
+    defmodule DelayUnit do
+      @valid_types [:days, :hours, :minutes, :seconds]
+      @type t :: :days | :hours | :minutes | :seconds
+
+      def new(value) do
+        value = String.to_atom(value)
+
+        if value in @valid_types do
+          {:ok, value}
+        else
+          {:error, "Invalid delay unit"}
+        end
+      end
+    end
+
+    defmodule DelayValue do
+      @type t :: non_neg_integer
+
+      def new(value) when is_integer(value) do
+        if value >= 0 do
+          {:ok, value}
+        else
+          {:error, "Invalid delay value"}
+        end
+      end
+
+      def new(value) when is_binary(value) do
+        case Integer.parse(value) do
+          {value, ""} -> new(value)
+          _ -> {:error, "Invalid delay value"}
+        end
+      end
+    end
+
     @enforce_keys [:id, :delay_value, :delay_unit]
     defstruct [:id, :delay_value, :delay_unit]
 
-    @type delay_unit :: :days | :hours | :minutes | :seconds
+    @type delay_unit :: DelayUnit.t()
     @type t :: %__MODULE__{id: binary, delay_value: integer, delay_unit: delay_unit}
+
+    def new(id, %{"delay_value" => delay_value, "delay_unit" => delay_unit}) do
+      with {:ok, delay_unit} <- DelayUnit.new(delay_unit),
+           {:ok, delay_value} <- DelayValue.new(delay_value) do
+        {:ok, %__MODULE__{id: id, delay_value: delay_value, delay_unit: delay_unit}}
+      end
+    end
   end
 
   defmodule Action do
@@ -37,6 +119,16 @@ defmodule Workflow do
     @enforce_keys [:id, :action]
     defstruct [:id, :action]
     @type t :: %__MODULE__{id: binary, action: SendSms.t()}
+
+    def new(id, "send_sms", %{
+          "value" => %{"phone_number" => phone_number, "text" => text}
+        }) do
+      {:ok, %__MODULE__{id: id, action: %SendSms{phone_number: phone_number, text: text}}}
+    end
+
+    def new(_, action, value) do
+      {:error, "Invalid action '#{action}' with value: #{inspect(value)}"}
+    end
   end
 
   defmodule RunnableAction do
@@ -49,34 +141,6 @@ defmodule Workflow do
           }
   end
 
-  defmodule StepDto do
-    defstruct [:id, :title, :description, :type, :trigger, :action, :value]
-
-    @type t :: %__MODULE__{
-            id: binary,
-            title: binary,
-            description: binary,
-            type: binary,
-            trigger: binary,
-            action: binary,
-            value: map
-          }
-  end
-
-  defmodule NewStepDto do
-    @enforce_keys [:title, :description, :type, :trigger, :action, :value]
-    defstruct [:title, :description, :type, :trigger, :action, :value]
-
-    @type t :: %__MODULE__{
-            title: binary,
-            description: binary,
-            type: binary,
-            trigger: binary | nil,
-            action: binary | nil,
-            value: map | nil
-          }
-  end
-
   defmodule Step do
     @enforce_keys [:id, :title, :description, :step]
     defstruct [:id, :title, :description, :step]
@@ -84,36 +148,6 @@ defmodule Workflow do
     @type id :: binary
     @type step :: Trigger.t() | Filter.t() | Delay.t() | Action.t()
     @type t :: %__MODULE__{id: id, title: binary, description: binary, step: step}
-  end
-
-  defmodule NewTrigger do
-    defstruct [:title, :description, :trigger, :context]
-
-    @type t :: %__MODULE__{title: binary, description: binary, trigger: binary, context: map}
-  end
-
-  defmodule NewScenarioParams do
-    defstruct [:workspace_id, :template_trigger_id]
-
-    @type t :: %__MODULE__{workspace_id: binary, template_trigger_id: binary}
-  end
-
-  defmodule NewScenario do
-    defstruct [:workspace_id, :title, :new_trigger]
-
-    @type t :: %__MODULE__{workspace_id: binary, title: binary, new_trigger: NewTrigger.t()}
-  end
-
-  defmodule NewStepParams do
-    defstruct [:workspace_id, :template_step_id]
-
-    @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
-  end
-
-  defmodule IncompleteFilter do
-    defstruct [:id]
-
-    @type t :: %__MODULE__{id: binary}
   end
 
   defmodule Scenario do
@@ -126,35 +160,9 @@ defmodule Workflow do
             workspace_id: binary,
             enabled: boolean,
             title: binary,
-            trigger_id: Trigger.trigger(),
+            trigger_id: Trigger.TriggerType.t(),
             ordered_action_ids: [Step.id()],
             steps: [Step.t()]
-          }
-  end
-
-  # TODO: may not need ScenarioDto
-  defmodule ScenarioDto do
-    defstruct [:id, :workspace_id, :enabled, :title, :trigger, :ordered_action_ids, :steps]
-
-    @type t :: %__MODULE__{
-            id: binary,
-            workspace_id: binary,
-            enabled: boolean,
-            title: binary,
-            trigger: binary,
-            ordered_action_ids: [StepDto.id()],
-            steps: [StepDto.t()]
-          }
-  end
-
-  defmodule NewScenarioDto do
-    defstruct [:workspace_id, :title, :trigger, :steps]
-
-    @type t :: %__MODULE__{
-            workspace_id: binary,
-            title: binary,
-            trigger: binary,
-            steps: [NewStepDto.t()]
           }
   end
 
@@ -170,21 +178,64 @@ defmodule Workflow do
           }
   end
 
+  defmodule NewTrigger do
+    alias Trigger.TriggerType
+    defstruct [:title, :description, :trigger, :context]
+
+    @type t :: %__MODULE__{
+            title: binary,
+            description: binary,
+            trigger: TriggerType.t(),
+            context: map
+          }
+
+    def new(title, descrption, trigger, context) do
+      {:ok, trigger_type} = TriggerType.new(trigger)
+      %__MODULE__{title: title, description: descrption, trigger: trigger_type, context: context}
+    end
+  end
+
+  defmodule NewScenarioParams do
+    defstruct [:workspace_id, :template_trigger_id]
+
+    @type t :: %__MODULE__{workspace_id: binary, template_trigger_id: binary}
+  end
+
+  defmodule NewScenario do
+    defstruct [:workspace_id, :title, :trigger]
+
+    @type t :: %__MODULE__{workspace_id: binary, title: binary, trigger: NewTrigger.t()}
+  end
+
+  defmodule NewStepParams do
+    defstruct [:workspace_id, :template_step_id]
+
+    @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
+  end
+
+  defmodule IncompleteFilter do
+    defstruct [:id]
+
+    @type t :: %__MODULE__{id: binary}
+  end
+
   def create_new_scenario(%NewScenarioParams{} = params, repository) do
     params
     |> new_scenario()
-    |> to_new_scenario_dto()
+    |> NewScenarioDto.from_domain()
     |> repository.create_new_scenario()
+    |> Error.map(&ScenarioDto.to_domain/1)
   end
 
   def add_step(%NewStepParams{} = params, repository) do
     step_dto = new_step_dto(params)
     repository.add_step(params.workspace_id, step_dto)
+    |> Error.map(&ScenarioDto.to_domain/1)
   end
 
   def new_scenario(%NewScenarioParams{} = params) do
     trigger_template =
-      Template.triggers
+      Template.triggers()
       |> Enum.find(&(&1.id == params.template_trigger_id))
 
     if is_nil(trigger_template) do
@@ -194,18 +245,13 @@ defmodule Workflow do
     %NewScenario{
       workspace_id: params.workspace_id,
       title: trigger_template.title <> " workflow",
-      new_trigger: %NewTrigger{
-        title: trigger_template.title,
-        description: trigger_template.description,
-        trigger: trigger_template.trigger,
-        context: trigger_template.context
-      }
+      trigger: NewTrigger.new(trigger_template.title, trigger_template.description, trigger_template.trigger, trigger_template.context)
     }
   end
 
   def new_step_dto(%NewStepParams{} = params) do
     step_template =
-      Template.actions
+      Template.actions()
       |> Enum.find(&(&1.id == params.template_step_id))
 
     if is_nil(step_template) do
@@ -241,15 +287,15 @@ defmodule Workflow do
   end
 
   @spec build_trigger_from_step(Step.t()) :: Trigger.t()
-  defp build_trigger_from_step(%Step{step: %Trigger{}} = step) do
-    %Trigger{id: step.id, trigger: step.step.trigger, context: step.step.context}
+  defp build_trigger_from_step(%Step{step: %Trigger{} = trigger}) do
+    trigger
   end
 
   @spec compile_actions([Step.id()], [Step.t()]) :: [RunnableAction.t()]
   defp compile_actions(step_ids, steps) do
     steps =
       step_ids
-      |> Enum.map(& Enum.find(steps, fn step -> &1 == step.id end))
+      |> Enum.map(&Enum.find(steps, fn step -> &1 == step.id end))
 
     # Find action steps
     action_steps =
@@ -257,7 +303,7 @@ defmodule Workflow do
       |> Enum.filter(&(&1.step.__struct__ == Action))
 
     action_steps
-    |> Enum.map(fn action_step -> 
+    |> Enum.map(fn action_step ->
       index = Enum.find_index(steps, fn step -> step.id == action_step.id end)
       # Find filter steps before action step
       filter_steps =
@@ -277,24 +323,5 @@ defmodule Workflow do
         action: action_step.step
       }
     end)
-  end
-
-  @spec to_new_scenario_dto(NewScenario.t()) :: NewScenarioDto.t()
-  defp to_new_scenario_dto(%NewScenario{} = new_scenario) do
-    %NewScenarioDto{
-      workspace_id: new_scenario.workspace_id,
-      title: new_scenario.title,
-      trigger: new_scenario.new_trigger.trigger,
-      steps: [
-        %NewStepDto{
-          title: new_scenario.new_trigger.title,
-          description: new_scenario.new_trigger.description,
-          type: "trigger",
-          trigger: new_scenario.new_trigger.trigger,
-          action: nil,
-          value: new_scenario.new_trigger.context
-        }
-      ]
-    }
   end
 end
