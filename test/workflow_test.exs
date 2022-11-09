@@ -1,7 +1,7 @@
 defmodule WorkflowTest do
   use ExUnit.Case
 
-  alias Workflow.{NewScenarioParams, NewStepParams, Dto.ScenarioDto, Dto.StepDto}
+  alias Workflow.{Step, NewScenarioParams, NewStepParams, UpdateStepParams, Dto.ScenarioDto, Dto.StepDto}
   import Mox
 
   describe "#create_new_scenario" do
@@ -31,8 +31,7 @@ defmodule WorkflowTest do
         template_step_id: "step-filter"
       }
 
-      {:ok, scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
-      IO.inspect(scenario)
+      {:ok, _scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "add an emply delay step to a scenario" do
@@ -47,8 +46,7 @@ defmodule WorkflowTest do
         template_step_id: "step-delay"
       }
 
-      {:ok, scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
-      IO.inspect(scenario)
+      {:ok, _scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "add an emply action step to a scenario" do
@@ -63,14 +61,78 @@ defmodule WorkflowTest do
         template_step_id: "step-schedule-text"
       }
 
-      {:ok, scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
-      IO.inspect(scenario)
+      {:ok, _scenario} = Workflow.add_step(params, Workflow.Repository.Mock)
+    end
+  end
+
+  describe "#update_step" do
+    test "replaces a step" do
+      step = build_step_dto(Workflow.new_step_dto("step-filter"), "step-2")
+
+      Workflow.Repository.Mock
+      |> expect(:get_step, fn _id ->
+        {:ok, step}
+      end)
+      |> expect(:update_step, fn _scenario_id, step_dto ->
+        Jason.encode!(step_dto)
+        step = build_step_dto(step_dto, "step-2")
+        {:ok, step}
+      end)
+
+      params = %UpdateStepParams{
+        step_id: "abc",
+        template_step_id: "step-schedule-text"
+      }
+
+      {:ok, _scenario} = Workflow.update_step(params, Workflow.Repository.Mock)
+    end
+
+    test "update value for a step" do
+      step = build_step_dto(Workflow.new_step_dto("step-filter"), "step-2")
+
+      params = %UpdateStepParams{
+        step_id: step.id,
+        template_step_id: nil,
+        value: %{"conditions" => "a:=:1"}
+      }
+
+      Workflow.Repository.Mock
+      |> expect(:get_step, fn id ->
+        assert step.id == id
+        {:ok, step}
+      end)
+      |> expect(:update_step_value, fn step_id, value ->
+        assert step.id == step_id
+        step = %{ step | value: value }
+        {:ok, step}
+      end)
+
+      {:ok, %Step{step: %Workflow.Filter{}}} = Workflow.update_step(params, Workflow.Repository.Mock)
     end
   end
 
   defp build_scenario_dto(new_step_dto \\ nil) do
-    steps = [
-      %StepDto{
+    steps = [ trigger_step() ]
+    steps =
+      if is_nil(new_step_dto) do
+        steps
+      else
+        steps ++ [build_step_dto(new_step_dto, "step-2")]
+      end
+
+    %ScenarioDto{
+      id: "123",
+      workspace_id: "abc",
+      enabled: false,
+      title: "New Scenario",
+      trigger: "step-check-in",
+      ordered_action_ids: [],
+      steps: steps
+    }
+  end
+
+  defp trigger_step() do
+    %StepDto{
         id: "step-1",
         title: "Check In",
         description: "Check in with your team",
@@ -82,34 +144,17 @@ defmodule WorkflowTest do
           "text" => "How are you doing today?"
         }
       }
-    ]
+  end
 
-    steps =
-      if is_nil(new_step_dto) do
-        steps
-      else
-        steps ++
-          [
-            %StepDto{
-              id: "step-2",
-              title: new_step_dto.title,
-              description: new_step_dto.description,
-              type: new_step_dto.type,
-              trigger: new_step_dto.trigger,
-              action: new_step_dto.action,
-              value: new_step_dto.value
-            }
-          ]
-      end
-
-    %ScenarioDto{
-      id: "123",
-      workspace_id: "abc",
-      enabled: false,
-      title: "New Scenario",
-      trigger: "step-check-in",
-      ordered_action_ids: [],
-      steps: steps
+  defp build_step_dto(new_step_dto, id) do
+    %StepDto{
+      id: id,
+      title: new_step_dto.title,
+      description: new_step_dto.description,
+      type: new_step_dto.type,
+      trigger: new_step_dto.trigger,
+      action: new_step_dto.action,
+      value: new_step_dto.value
     }
   end
 end

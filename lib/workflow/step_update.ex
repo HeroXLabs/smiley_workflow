@@ -1,5 +1,6 @@
 defmodule Workflow.StepUpdate do
   alias Workflow.{Step, Filter, Delay, Action}
+  alias Workflow.UpdateStepParams
 
   defmodule ReplaceStep do
     @enforce_keys [:step, :template_step_id]
@@ -79,17 +80,11 @@ defmodule Workflow.StepUpdate do
     end
   end
 
-  def new(%Step{} = step, params) do
-    case Map.get(params, "template_step_id") do
+  def new(%Step{} = step, %UpdateStepParams{template_step_id: template_step_id, value: value}) do
+    case template_step_id do
       nil ->
-        case Map.get(params, "value") do
-          nil ->
-            {:error, "Invalid step params"}
-
-          value ->
-            with {:ok, update} <- build_update(step, value) do
-              {:ok, %UpdateStep{step: step, update: update}}
-            end
+        with {:ok, update} <- build_update(step, value) do
+          {:ok, %UpdateStep{step: step, update: update}}
         end
 
       template_step_id ->
@@ -106,7 +101,16 @@ defmodule Workflow.StepUpdate do
         UpdateDelay.new(value)
 
       %Step{step: %Action.SendSms{}} ->
-        UpdateAction.new(step.action, value)
+        UpdateAction.new("send_sms", value)
+
+      %Step{step: %Filter.Incomplete{}} ->
+        UpdateFilter.new(value)
+
+      %Step{step: %Delay.Incomplete{}} ->
+        UpdateDelay.new(value)
+
+      %Step{step: %Action.Incomplete{action: :send_sms}} ->
+        UpdateAction.new("send_sms", value)
     end
   end
 end

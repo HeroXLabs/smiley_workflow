@@ -34,12 +34,12 @@ defmodule Workflow do
     end
   end
 
-  defmodule IncompleteStep do
-    defstruct []
-    @type t :: %__MODULE__{}
-  end
-
   defmodule Filter do
+    defmodule Incomplete do
+      defstruct []
+      @type t :: %__MODULE__{}
+    end
+
     defmodule FilterConditions do
       alias Workflow.{TypedConditions, Template}
       @type t :: TypedConditions.t()
@@ -64,11 +64,16 @@ defmodule Workflow do
     end
 
     def new(_) do
-      {:ok, %IncompleteStep{}}
+      {:ok, %Incomplete{}}
     end
   end
 
   defmodule Delay do
+    defmodule Incomplete do
+      defstruct []
+      @type t :: %__MODULE__{}
+    end
+
     defmodule DelayUnit do
       @valid_types [:days, :hours, :minutes, :seconds]
       @type t :: :days | :hours | :minutes | :seconds
@@ -117,11 +122,19 @@ defmodule Workflow do
     end
 
     def new(_) do
-      {:ok, %IncompleteStep{}}
+      {:ok, %Incomplete{}}
     end
   end
 
   defmodule Action do
+    defmodule Incomplete do
+      @enforce_keys [:action]
+      defstruct [:action]
+
+      @type action :: :send_sms
+      @type t :: %__MODULE__{action: action}
+    end
+
     defmodule SendSms do
       @enforce_keys [:phone_number, :text]
       defstruct [:phone_number, :text]
@@ -134,7 +147,7 @@ defmodule Workflow do
           %{"phone_number" => phone_number, "text" => text} ->
             {:ok, %__MODULE__{phone_number: phone_number, text: text}}
           _ -> 
-            {:ok, %IncompleteStep{}}
+            {:ok, %Incomplete{action: :send_sms}}
         end
       end
     end
@@ -220,16 +233,22 @@ defmodule Workflow do
     @type t :: %__MODULE__{workspace_id: binary, template_trigger_id: binary}
   end
 
-  defmodule NewScenario do
-    defstruct [:workspace_id, :title, :trigger]
-
-    @type t :: %__MODULE__{workspace_id: binary, title: binary, trigger: NewTrigger.t()}
-  end
-
   defmodule NewStepParams do
     defstruct [:workspace_id, :template_step_id]
 
     @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
+  end
+
+  defmodule UpdateStepParams do
+    defstruct [:step_id, :template_step_id, :value]
+
+    @type t :: %__MODULE__{step_id: binary, template_step_id: binary, value: map}
+  end
+
+  defmodule NewScenario do
+    defstruct [:workspace_id, :title, :trigger]
+
+    @type t :: %__MODULE__{workspace_id: binary, title: binary, trigger: NewTrigger.t()}
   end
 
   def create_new_scenario(%NewScenarioParams{} = params, repository) do
@@ -247,9 +266,9 @@ defmodule Workflow do
     |> Error.map(&ScenarioDto.to_domain/1)
   end
 
-  def get_step(workspace_id, step_id, repository) do
-    repository.get_step(workspace_id, step_id)
-    |> Error.map(&StepDto.to_domain/1)
+  def get_step(step_id, repository) do
+    repository.get_step(step_id)
+    |> Error.bind(&StepDto.to_domain/1)
   end
 
   def new_scenario(%NewScenarioParams{} = params) do
@@ -272,8 +291,9 @@ defmodule Workflow do
     }
   end
 
-  def update_step(%Step{} = step, params, repository) do
-    with {:ok, step_update} <- StepUpdate.new(step, params) do
+  def update_step(%UpdateStepParams{} = params, repository) do
+    with {:ok, step} <- get_step(params.step_id, repository),
+         {:ok, step_update} <- StepUpdate.new(step, params) do
       update_step(step_update, repository)
     end
   end
@@ -281,12 +301,29 @@ defmodule Workflow do
   def update_step(%StepUpdate.ReplaceStep{} = update, repository) do
     step_dto = new_step_dto(update.template_step_id)
     repository.update_step(update.step.id, step_dto)
-    |> Error.map(&StepDto.to_domain/1)
+    |> Error.bind(&StepDto.to_domain/1)
   end
 
   def update_step(%StepUpdate.UpdateStep{} = update, repository) do
     repository.update_step_value(update.step.id, update.update.value)
-    |> Error.map(&StepDto.to_domain/1)
+    |> Error.bind(&StepDto.to_domain/1)
+  end
+
+  def new_step_dto(template_step_id) do
+    step_template = Template.find_action(template_step_id)
+
+    if is_nil(step_template) do
+      raise "Step template not found"
+    end
+
+    %NewStepDto{
+      title: step_template.title,
+      description: step_template.description,
+      type: "action",
+      trigger: nil,
+      action: step_template.action,
+      value: nil
+    }
   end
 
   @spec compile_scenario(Scenario.t()) :: RunnableScenario.t()
@@ -344,22 +381,5 @@ defmodule Workflow do
         action: action_step.step
       }
     end)
-  end
-
-  defp new_step_dto(template_step_id) do
-    step_template = Template.find_action(template_step_id)
-
-    if is_nil(step_template) do
-      raise "Step template not found"
-    end
-
-    %NewStepDto{
-      title: step_template.title,
-      description: step_template.description,
-      type: "action",
-      trigger: nil,
-      action: step_template.action,
-      value: nil
-    }
   end
 end

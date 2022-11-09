@@ -94,11 +94,11 @@ defmodule Workflow.Template do
 
   def find_trigger(template_trigger_id) do
     triggers()
-    |> Enum.find(&(&1.id == template_trigger_id))
+    |> Enum.find(fn %{id: id} -> id == template_trigger_id end)
   end
 
   def find_action(template_action_id) do
     actions()
-    |> Enum.find(&(&1.id == template_action_id))
+    |> Enum.find(fn %{id: id} -> id == template_action_id end)
   end
 end
