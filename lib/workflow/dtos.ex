@@ -95,6 +95,7 @@ defmodule Workflow.Dto do
   defmodule ScenarioDto do
     alias Workflow.{Scenario}
 
+    @enforce_keys [:id, :workspace_id, :enabled, :title, :trigger, :ordered_action_ids, :steps]
     defstruct [:id, :workspace_id, :enabled, :title, :trigger, :ordered_action_ids, :steps]
 
     @type t :: %__MODULE__{
@@ -115,15 +116,16 @@ defmodule Workflow.Dto do
                {:ok, step}, {:ok, steps} -> {:ok, [step | steps]}
                {:error, error}, _ -> {:error, error}
              end) do
-        %Scenario{
-          id: scenario_dto.id,
-          workspace_id: scenario_dto.workspace_id,
-          enabled: scenario_dto.enabled,
-          title: scenario_dto.title,
-          trigger_id: scenario_dto.trigger,
-          ordered_action_ids: scenario_dto.ordered_action_ids,
-          steps: steps
-        }
+        {:ok,
+         %Scenario{
+           id: scenario_dto.id,
+           workspace_id: scenario_dto.workspace_id,
+           enabled: scenario_dto.enabled,
+           title: scenario_dto.title,
+           trigger_id: scenario_dto.trigger,
+           ordered_action_ids: scenario_dto.ordered_action_ids,
+           steps: steps
+         }}
       end
     end
   end

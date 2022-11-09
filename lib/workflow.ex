@@ -146,7 +146,8 @@ defmodule Workflow do
         case value do
           %{"phone_number" => phone_number, "text" => text} ->
             {:ok, %__MODULE__{phone_number: phone_number, text: text}}
-          _ -> 
+
+          _ ->
             {:ok, %Incomplete{action: :send_sms}}
         end
       end
@@ -183,6 +184,7 @@ defmodule Workflow do
   end
 
   defmodule Scenario do
+    @enforce_keys [:id, :workspace_id, :enabled, :title, :trigger_id, :ordered_action_ids, :steps]
     defstruct [:id, :workspace_id, :enabled, :title, :trigger_id, :ordered_action_ids, :steps]
 
     @type id :: binary
@@ -231,18 +233,43 @@ defmodule Workflow do
     defstruct [:workspace_id, :template_trigger_id]
 
     @type t :: %__MODULE__{workspace_id: binary, template_trigger_id: binary}
+
+    def new(%{"workspace_id" => workspace_id, "template_trigger_id" => template_trigger_id}) do
+      {:ok, %__MODULE__{workspace_id: workspace_id, template_trigger_id: template_trigger_id}}
+    end
+
+    def new(_) do
+      {:error, "Invalid params"}
+    end
   end
 
   defmodule NewStepParams do
     defstruct [:workspace_id, :template_step_id]
 
     @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
+
+    def new(%{"workspace_id" => workspace_id, "template_step_id" => template_step_id}) do
+      {:ok, %__MODULE__{workspace_id: workspace_id, template_step_id: template_step_id}}
+    end
+
+    def new(_) do
+      {:error, "Invalid params"}
+    end
   end
 
   defmodule UpdateStepParams do
     defstruct [:step_id, :template_step_id, :value]
 
     @type t :: %__MODULE__{step_id: binary, template_step_id: binary, value: map}
+
+    def new(%{"step_id" => step_id} = params) do
+      {:ok,
+       %__MODULE__{
+         step_id: step_id,
+         template_step_id: Map.get(params, "template_step_id"),
+         value: Map.get(params, "value")
+       }}
+    end
   end
 
   defmodule NewScenario do
@@ -256,14 +283,14 @@ defmodule Workflow do
     |> new_scenario()
     |> NewScenarioDto.from_domain()
     |> repository.create_new_scenario()
-    |> Error.map(&ScenarioDto.to_domain/1)
+    |> Error.bind(&ScenarioDto.to_domain/1)
   end
 
   def add_step(%NewStepParams{} = params, repository) do
     step_dto = new_step_dto(params.template_step_id)
 
     repository.add_step(params.workspace_id, step_dto)
-    |> Error.map(&ScenarioDto.to_domain/1)
+    |> Error.bind(&StepDto.to_domain/1)
   end
 
   def get_step(step_id, repository) do
@@ -300,6 +327,7 @@ defmodule Workflow do
 
   def update_step(%StepUpdate.ReplaceStep{} = update, repository) do
     step_dto = new_step_dto(update.template_step_id)
+
     repository.update_step(update.step.id, step_dto)
     |> Error.bind(&StepDto.to_domain/1)
   end
@@ -358,7 +386,7 @@ defmodule Workflow do
     # Find action steps
     action_steps =
       steps
-      |> Enum.filter(&(&1.step.__struct__ == Action))
+      |> Enum.filter(&is_action_step/1)
 
     action_steps
     |> Enum.map(fn action_step ->
@@ -382,4 +410,7 @@ defmodule Workflow do
       }
     end)
   end
+
+  defp is_action_step(%Step{step: %Action.SendSms{}}), do: true
+  defp is_action_step(_), do: false
 end
