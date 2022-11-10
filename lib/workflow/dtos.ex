@@ -100,7 +100,9 @@ defmodule Workflow.Dto do
     defp build_action(%Action.SendSms{}), do: "send_sms"
 
     defp build_value(%Trigger{} = trigger), do: trigger.context
-    defp build_value(step), do: step.value
+    defp build_value(%Filter{} = filter), do: %{"conditions" => filter.raw_conditions}
+    defp build_value(%Delay{} = delay), do: %{"delay_value" => delay.delay_value, "delay_unit" => to_string(delay.delay_unit)}
+    defp build_value(step), do: Map.from_struct(step)
 
     defp build_step(%__MODULE__{type: "trigger", trigger: trigger, value: value}) do
       Trigger.new(trigger, value)

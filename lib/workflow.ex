@@ -52,14 +52,14 @@ defmodule Workflow do
       end
     end
 
-    @enforce_keys [:conditions]
-    defstruct [:conditions]
+    @enforce_keys [:conditions, :raw_conditions]
+    defstruct [:conditions, :raw_conditions]
 
-    @type t :: %__MODULE__{conditions: FilterConditions.t()}
+    @type t :: %__MODULE__{conditions: FilterConditions.t(), raw_conditions: binary}
 
     def new(%{"conditions" => raw_conditions}) do
       with {:ok, conditions} <- FilterConditions.new(raw_conditions) do
-        {:ok, %__MODULE__{conditions: conditions}}
+        {:ok, %__MODULE__{conditions: conditions, raw_conditions: raw_conditions}}
       end
     end
 
@@ -288,14 +288,14 @@ defmodule Workflow do
   end
 
   defmodule UpdateStepParams do
-    defstruct [:step_id, :template_step_id, :value]
+    defstruct [:id, :template_step_id, :value]
 
-    @type t :: %__MODULE__{step_id: binary, template_step_id: binary, value: map}
+    @type t :: %__MODULE__{id: binary, template_step_id: binary, value: map}
 
-    def new(%{"step_id" => step_id} = params) do
+    def new(%{"id" => step_id} = params) do
       {:ok,
        %__MODULE__{
-         step_id: step_id,
+         id: step_id,
          template_step_id: Map.get(params, "template_step_id"),
          value: Map.get(params, "value")
        }}
@@ -373,7 +373,7 @@ defmodule Workflow do
   end
 
   def update_step(%UpdateStepParams{} = params, repository) do
-    with {:ok, step} <- get_step(params.step_id, repository),
+    with {:ok, step} <- get_step(params.id, repository),
          {:ok, step_update} <- StepUpdate.new(step, params) do
       update_step(step_update, repository)
     end
@@ -465,12 +465,13 @@ defmodule Workflow do
               |> Enum.filter(&Step.is_filter_step?/1)
             end
 
-          {:ok, %RunnableAction{
-            filters: filter_steps_before_delay |> Enum.map(& &1.step),
-            delays: delay_steps |> Enum.map(& &1.step),
-            inline_filters: filter_steps_after_delay |> Enum.map(& &1.step),
-            action: action_step.step
-          }}
+          {:ok,
+           %RunnableAction{
+             filters: filter_steps_before_delay |> Enum.map(& &1.step),
+             delays: delay_steps |> Enum.map(& &1.step),
+             inline_filters: filter_steps_after_delay |> Enum.map(& &1.step),
+             action: action_step.step
+           }}
         else
           {:error, "Missing action step"}
         end

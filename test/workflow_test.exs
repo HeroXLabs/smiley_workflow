@@ -106,7 +106,8 @@ defmodule WorkflowTest do
           %Workflow.RunnableAction{
             filters: [
               %Workflow.Filter{
-                conditions: {{:number, "visits_count"}, {{:equal, :number}, 1}}
+                conditions: {{:number, "visits_count"}, {{:equal, :number}, 1}},
+                raw_conditions: "visits_count:=:1"
               }
             ],
             delays: [%Workflow.Delay{delay_unit: :hours, delay_value: 2}],
@@ -119,7 +120,8 @@ defmodule WorkflowTest do
           %Workflow.RunnableAction{
             filters: [
               %Workflow.Filter{
-                conditions: {{:selection, "tags"}, {{:equal, :string}, "vip"}}
+                conditions: {{:selection, "tags"}, {{:equal, :string}, "vip"}},
+                raw_conditions: "tags:=:vip"
               }
             ],
             delays: [
@@ -127,7 +129,8 @@ defmodule WorkflowTest do
             ],
             inline_filters: [
               %Workflow.Filter{
-                conditions: {{:selection, "tags"}, {{:not_equal, :string}, "vip"}}
+                conditions: {{:selection, "tags"}, {{:not_equal, :string}, "vip"}},
+                raw_conditions: "tags:!=:vip"
               }
             ],
             action: %Workflow.Action.SendSms{
@@ -271,7 +274,7 @@ defmodule WorkflowTest do
       end)
 
       params = %UpdateStepParams{
-        step_id: "abc",
+        id: "abc",
         template_step_id: "step-schedule-text"
       }
 
@@ -282,7 +285,7 @@ defmodule WorkflowTest do
       step = build_step_dto(Workflow.new_step_dto("step-filter"), "step-2")
 
       params = %UpdateStepParams{
-        step_id: step.id,
+        id: step.id,
         template_step_id: nil,
         value: %{"conditions" => "a:=:1"}
       }
