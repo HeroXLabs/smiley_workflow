@@ -139,45 +139,108 @@ defmodule WorkflowTest do
 
   describe "#add_step" do
     test "adds an empty filter step to a scenario" do
-      expect(Workflow.Repository.Mock, :add_step, fn _scenario_id, step_dto ->
+      scenario = build_scenario_dto([])
+
+      Workflow.Repository.Mock
+      |> expect(:create_step, fn _scenario_id, step_dto ->
         Jason.encode!(step_dto)
-        step = build_step_dto(step_dto, "step-3")
+        step = build_step_dto(step_dto, "step-1")
         {:ok, step}
+      end)
+      |> expect(:get_scenario, fn _scenario_id -> 
+        {:ok, scenario}
+      end)
+      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+        assert attrs == %{ordered_action_ids: ["step-1"]}
+        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter")])
+        {:ok, scenario}
       end)
 
       params = %NewStepParams{
-        workspace_id: "abc",
-        template_step_id: "step-filter"
+        workflow_id: scenario.id,
+        template_step_id: "step-filter",
+        insert_at: :append
       }
 
       {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "add an emply delay step to a scenario" do
-      expect(Workflow.Repository.Mock, :add_step, fn _scenario_id, step_dto ->
+      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter")])
+
+      Workflow.Repository.Mock
+      |> expect(:create_step, fn _scenario_id, step_dto ->
         Jason.encode!(step_dto)
         step = build_step_dto(step_dto, "step-3")
         {:ok, step}
       end)
+      |> expect(:get_scenario, fn _scenario_id -> 
+        {:ok, scenario}
+      end)
+      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+        assert attrs == %{ordered_action_ids: ["step-2", "step-3"]}
+        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+        {:ok, scenario}
+      end)
 
       params = %NewStepParams{
-        workspace_id: "abc",
-        template_step_id: "step-delay"
+        workflow_id: scenario.id,
+        template_step_id: "step-delay",
+        insert_at: :append
       }
 
       {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "add an emply action step to a scenario" do
-      expect(Workflow.Repository.Mock, :add_step, fn _scenario_id, step_dto ->
+      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+
+      Workflow.Repository.Mock
+      |> expect(:get_scenario, fn _scenario_id -> 
+        {:ok, scenario}
+      end)
+      |> expect(:create_step, fn _scenario_id, step_dto ->
         Jason.encode!(step_dto)
-        step = build_step_dto(step_dto, "step-3")
+        step = build_step_dto(step_dto, "step-4")
         {:ok, step}
+      end)
+      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+        assert attrs == %{ordered_action_ids: ["step-2", "step-3", "step-4"]}
+        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay"), Workflow.new_step_dto("step-schedule-text")])
+        {:ok, scenario}
       end)
 
       params = %NewStepParams{
-        workspace_id: "abc",
-        template_step_id: "step-schedule-text"
+        workflow_id: scenario.id,
+        template_step_id: "step-schedule-text",
+        insert_at: :append
+      }
+
+      {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
+    end
+
+    test "insert an emply action step in the middle to a scenario" do
+      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+
+      Workflow.Repository.Mock
+      |> expect(:get_scenario, fn _scenario_id -> 
+        {:ok, scenario}
+      end)
+      |> expect(:create_step, fn _scenario_id, step_dto ->
+        Jason.encode!(step_dto)
+        step = build_step_dto(step_dto, "step-4")
+        {:ok, step}
+      end)
+      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+        assert attrs == %{ordered_action_ids: ["step-2", "step-4", "step-3"]}
+        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay"), Workflow.new_step_dto("step-schedule-text")])
+        {:ok, scenario}
+      end)
+
+      params = %NewStepParams{
+        workflow_id: scenario.id,
+        template_step_id: "step-schedule-text",
+        insert_at: {:insert_at, 1}
       }
 
       {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
@@ -232,8 +295,10 @@ defmodule WorkflowTest do
   end
 
   defp build_scenario_dto(new_step_dtos) do
-    steps =
-      Enum.reduce(new_step_dtos, [trigger_step()], fn new_step_dto, steps ->
+    trigger_step = trigger_step()
+
+    [_ | action_steps ] = steps =
+      Enum.reduce(new_step_dtos, [trigger_step], fn new_step_dto, steps ->
         step_num = Enum.count(steps) + 1
         steps ++ [build_step_dto(new_step_dto, "step-#{step_num}")]
       end)
@@ -243,8 +308,7 @@ defmodule WorkflowTest do
       workspace_id: "abc",
       enabled: false,
       title: "New Scenario",
-      trigger: "step-check-in",
-      ordered_action_ids: [],
+      ordered_action_ids: action_steps |> Enum.map(& &1.id),
       steps: steps
     }
   end

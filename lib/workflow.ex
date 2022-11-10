@@ -181,6 +181,12 @@ defmodule Workflow do
     @type id :: binary
     @type step :: Trigger.t() | Filter.t() | Delay.t() | Action.t()
     @type t :: %__MODULE__{id: id, title: binary, description: binary, step: step}
+
+    def is_action_step?(%__MODULE__{step: %Action.SendSms{}}), do: true
+    def is_action_step?(_), do: false
+
+    def is_trigger_step?(%__MODULE__{step: %Trigger{}}), do: true
+    def is_trigger_step?(_), do: false
   end
 
   defmodule Scenario do
@@ -239,21 +245,38 @@ defmodule Workflow do
     end
 
     def new(_) do
-      {:error, "Invalid params"}
+      {:error, "Invalid params. Requires workspace_id and template_trigger_id"}
     end
   end
 
   defmodule NewStepParams do
-    defstruct [:workspace_id, :template_step_id]
+    defstruct [:workflow_id, :template_step_id, :insert_at]
 
-    @type t :: %__MODULE__{workspace_id: binary, template_step_id: binary}
+    defmodule InsertAt do
+      @type t :: :append | {:insert_at, integer}
 
-    def new(%{"workspace_id" => workspace_id, "template_step_id" => template_step_id}) do
-      {:ok, %__MODULE__{workspace_id: workspace_id, template_step_id: template_step_id}}
+      @spec new(any) :: t
+      def new(position) when is_integer(position), do: {:insert_at, position}
+      def new(nil), do: :append
+    end
+
+    @type t :: %__MODULE__{
+            workflow_id: binary,
+            template_step_id: binary,
+            insert_at: InsertAt.t()
+          }
+
+    def new(%{"workflow_id" => workflow_id, "template_action_id" => template_step_id} = params) do
+      {:ok,
+       %__MODULE__{
+         workflow_id: workflow_id,
+         template_step_id: template_step_id,
+         insert_at: InsertAt.new(Map.get(params, "insert_at"))
+       }}
     end
 
     def new(_) do
-      {:error, "Invalid params"}
+      {:error, "Invalid params. Requires workflow_id and template_action_id"}
     end
   end
 
@@ -286,11 +309,29 @@ defmodule Workflow do
     |> Error.bind(&ScenarioDto.to_domain/1)
   end
 
+  def get_scenario(scenario_id, repository) do
+    repository.get_scenario(scenario_id)
+    |> Error.bind(&ScenarioDto.to_domain/1)
+  end
+
+  def update_scenario(scenario_id, attrs, repository) do
+    scenario_id
+    |> repository.update_scenario(attrs)
+    |> Error.bind(&ScenarioDto.to_domain/1)
+  end
+
   def add_step(%NewStepParams{} = params, repository) do
     step_dto = new_step_dto(params.template_step_id)
 
-    repository.add_step(params.workspace_id, step_dto)
-    |> Error.bind(&StepDto.to_domain/1)
+    with {:ok, scenario} <- get_scenario(params.workflow_id, repository),
+         {:ok, step} <- create_step(params.workflow_id, step_dto, repository) do
+      new_ordered_action_ids =
+        case params.insert_at do
+          :append -> scenario.ordered_action_ids ++ [step.id]
+          {:insert_at, position} -> List.insert_at(scenario.ordered_action_ids, position, step.id)
+        end
+      update_scenario(scenario.id, %{ordered_action_ids: new_ordered_action_ids}, repository)
+    end
   end
 
   def get_step(step_id, repository) do
@@ -386,7 +427,7 @@ defmodule Workflow do
     # Find action steps
     action_steps =
       steps
-      |> Enum.filter(&is_action_step/1)
+      |> Enum.filter(&Step.is_action_step?/1)
 
     action_steps
     |> Enum.map(fn action_step ->
@@ -411,6 +452,8 @@ defmodule Workflow do
     end)
   end
 
-  defp is_action_step(%Step{step: %Action.SendSms{}}), do: true
-  defp is_action_step(_), do: false
+  defp create_step(workflow_id, step_dto, repository) do
+    repository.create_step(workflow_id, step_dto)
+    |> Error.bind(&StepDto.to_domain/1)
+  end
 end

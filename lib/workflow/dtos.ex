@@ -38,7 +38,7 @@ defmodule Workflow.Dto do
             title: new_scenario.trigger.title,
             description: new_scenario.trigger.description,
             type: "trigger",
-            trigger: new_scenario.trigger.trigger,
+            trigger: to_string(new_scenario.trigger.trigger),
             action: nil,
             value: new_scenario.trigger.context
           }
@@ -50,6 +50,7 @@ defmodule Workflow.Dto do
   defmodule StepDto do
     alias Workflow.{Step, Trigger, Filter, Delay, Action}
 
+    @derive Jason.Encoder
     @enforce_keys [:id, :title, :description, :type, :trigger, :action, :value]
     defstruct [:id, :title, :description, :type, :trigger, :action, :value]
 
@@ -75,6 +76,32 @@ defmodule Workflow.Dto do
       end
     end
 
+    def from_domain(%Step{} = step) do
+      %__MODULE__{
+        id: step.id,
+        title: step.title,
+        description: step.description,
+        type: build_type(step.step),
+        trigger: build_trigger(step.step),
+        action: build_action(step.step),
+        value: build_value(step.step)
+      }
+    end
+
+    defp build_type(%Trigger{}), do: "trigger"
+    defp build_type(_), do: "action"
+
+    defp build_trigger(%Trigger{} = trigger), do: to_string(trigger.type)
+    defp build_trigger(_), do: nil
+
+    defp build_action(%Trigger{}), do: nil
+    defp build_action(%Filter{}), do: "filter"
+    defp build_action(%Delay{}), do: "delay"
+    defp build_action(%Action.SendSms{}), do: "send_sms"
+
+    defp build_value(%Trigger{} = trigger), do: trigger.context
+    defp build_value(step), do: step.value
+
     defp build_step(%__MODULE__{type: "trigger", trigger: trigger, value: value}) do
       Trigger.new(trigger, value)
     end
@@ -93,18 +120,17 @@ defmodule Workflow.Dto do
   end
 
   defmodule ScenarioDto do
-    alias Workflow.{Scenario}
+    alias Workflow.{Scenario, Step}
 
-    @enforce_keys [:id, :workspace_id, :enabled, :title, :trigger, :ordered_action_ids, :steps]
-    defstruct [:id, :workspace_id, :enabled, :title, :trigger, :ordered_action_ids, :steps]
+    @enforce_keys [:id, :workspace_id, :enabled, :title, :ordered_action_ids, :steps]
+    defstruct [:id, :workspace_id, :enabled, :title, :ordered_action_ids, :steps]
 
     @type t :: %__MODULE__{
             id: binary,
             workspace_id: binary,
             enabled: boolean,
             title: binary,
-            trigger: binary,
-            ordered_action_ids: [StepDto.id()],
+            ordered_action_ids: [Step.id()],
             steps: [StepDto.t()]
           }
 
@@ -116,13 +142,21 @@ defmodule Workflow.Dto do
                {:ok, step}, {:ok, steps} -> {:ok, [step | steps]}
                {:error, error}, _ -> {:error, error}
              end) do
+        trigger_step =
+          steps
+          |> Enum.find(fn step -> Step.is_trigger_step?(step) end)
+
+        if is_nil(trigger_step) do
+          raise "Scenario must have a trigger step"
+        end
+
         {:ok,
          %Scenario{
            id: scenario_dto.id,
            workspace_id: scenario_dto.workspace_id,
            enabled: scenario_dto.enabled,
            title: scenario_dto.title,
-           trigger_id: scenario_dto.trigger,
+           trigger_id: trigger_step.id,
            ordered_action_ids: scenario_dto.ordered_action_ids,
            steps: steps
          }}

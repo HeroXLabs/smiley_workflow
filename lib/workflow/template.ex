@@ -1,7 +1,31 @@
 defmodule Workflow.Template do
+  defmodule TriggerTemplate do
+    @derive Jason.Encoder
+    @enforce_keys [:id, :title, :description, :type, :trigger, :context]
+    defstruct [:id, :title, :description, :type, :trigger, :context]
+  end
+
+  defmodule ActionTemplate do
+    @derive Jason.Encoder
+    @enforce_keys [:id, :title, :description, :type, :action]
+    defstruct [:id, :title, :description, :type, :action]
+  end
+
+  @conditions_map %{
+      "phone_number" => :string,
+      "first_name" => :string,
+      "tags" => :selection,
+      "visits_count" => :number,
+      "last_visit_at" => :date,
+      "check_in.services" => :selection,
+      "appointment.services" => :selection,
+      "employees.phone_number" => :string,
+      "employees.first_name" => :string
+    }
+
   def triggers() do
     [
-      %{
+      %TriggerTemplate{
         id: "step-check-in",
         title: "User checks in",
         description: "Trigger when a user checks in",
@@ -20,7 +44,7 @@ defmodule Workflow.Template do
           ]
         }
       },
-      %{
+      %TriggerTemplate{
         id: "step-cancel-appointment",
         title: "Cancel appointment",
         description: "Trigger when a user cancels an appointment",
@@ -50,21 +74,21 @@ defmodule Workflow.Template do
 
   def actions() do
     [
-      %{
+      %ActionTemplate{
         id: "step-filter",
         title: "Continue only if",
         description: "Continue only if the condition is met",
         type: "action",
         action: "filter"
       },
-      %{
+      %ActionTemplate{
         id: "step-delay",
         title: "Delay for",
         description: "Delay the workflow for a given amount of time",
         type: "action",
         action: "delay"
       },
-      %{
+      %ActionTemplate{
         id: "step-schedule-text",
         title: "Send a text message",
         description: "Send a text message to a customer",
@@ -74,31 +98,17 @@ defmodule Workflow.Template do
     ]
   end
 
-  def conditions_map() do
-    %{
-      "phone_number" => :string,
-      "first_name" => :string,
-      "tags" => :selection,
-      "visits_count" => :number,
-      "last_visit_at" => :date,
-      "check_in.services" => :selection,
-      "appointment.services" => :selection,
-      "employees.phone_number" => :string,
-      "employees.first_name" => :string
-    }
-  end
-
   def conditions_mapping(key) do
-    Map.get(conditions_map(), key, :string)
+    Map.get(@conditions_map, key, :string)
   end
 
   def find_trigger(template_trigger_id) do
     triggers()
-    |> Enum.find(fn %{id: id} -> id == template_trigger_id end)
+    |> Enum.find(fn %TriggerTemplate{id: id} -> id == template_trigger_id end)
   end
 
   def find_action(template_action_id) do
     actions()
-    |> Enum.find(fn %{id: id} -> id == template_action_id end)
+    |> Enum.find(fn %ActionTemplate{id: id} -> id == template_action_id end)
   end
 end
