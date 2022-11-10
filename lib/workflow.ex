@@ -324,13 +324,19 @@ defmodule Workflow do
     step_dto = new_step_dto(params.template_step_id)
 
     with {:ok, scenario} <- get_scenario(params.workflow_id, repository),
-         {:ok, step} <- create_step(params.workflow_id, step_dto, repository) do
-      new_ordered_action_ids =
-        case params.insert_at do
-          :append -> scenario.ordered_action_ids ++ [step.id]
-          {:insert_at, position} -> List.insert_at(scenario.ordered_action_ids, position, step.id)
-        end
-      update_scenario(scenario.id, %{ordered_action_ids: new_ordered_action_ids}, repository)
+         {:ok, step} <- create_step(params.workflow_id, step_dto, repository),
+         new_ordered_action_ids <-
+           build_new_order_action_ids(params.insert_at, scenario.ordered_action_ids, step.id),
+         {:ok, _scenario} <-
+           update_scenario(scenario.id, %{ordered_action_ids: new_ordered_action_ids}, repository) do
+      {:ok, step}
+    end
+  end
+
+  defp build_new_order_action_ids(insert_at, ordered_action_ids, step_id) do
+    case insert_at do
+      :append -> ordered_action_ids ++ [step_id]
+      {:insert_at, position} -> List.insert_at(ordered_action_ids, position, step_id)
     end
   end
 
