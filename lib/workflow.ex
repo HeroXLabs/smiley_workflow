@@ -165,11 +165,12 @@ defmodule Workflow do
   end
 
   defmodule RunnableAction do
-    defstruct [:filters, :delays, :action]
+    defstruct [:filters, :delays, :inline_filters, :action]
 
     @type t :: %__MODULE__{
             filters: [Filter.t()],
             delays: [Delay.t()],
+            inline_filters: [Filter.t()],
             action: Action.t()
           }
   end
@@ -187,6 +188,12 @@ defmodule Workflow do
 
     def is_trigger_step?(%__MODULE__{step: %Trigger{}}), do: true
     def is_trigger_step?(_), do: false
+
+    def is_delay_step?(%__MODULE__{step: %Delay{}}), do: true
+    def is_delay_step?(_), do: false
+
+    def is_filter_step?(%__MODULE__{step: %Filter{}}), do: true
+    def is_filter_step?(_), do: false
   end
 
   defmodule Scenario do
@@ -426,40 +433,70 @@ defmodule Workflow do
 
   @spec compile_actions([Step.id()], [Step.t()]) :: [RunnableAction.t()]
   defp compile_actions(step_ids, steps) do
-    steps =
+    {:ok, runnable_actions} =
       step_ids
       |> Enum.map(&Enum.find(steps, fn step -> &1 == step.id end))
+      |> split_by_action_steps()
+      |> Enum.map(fn steps ->
+        action_step = List.last(steps)
 
-    # Find action steps
-    action_steps =
-      steps
-      |> Enum.filter(&Step.is_action_step?/1)
+        if Step.is_action_step?(action_step) do
+          first_delay_step_index =
+            steps
+            |> Enum.find_index(&Step.is_delay_step?/1)
 
-    action_steps
-    |> Enum.map(fn action_step ->
-      index = Enum.find_index(steps, fn step -> step.id == action_step.id end)
-      # Find filter steps before action step
-      filter_steps =
-        steps
-        |> Enum.take(index)
-        |> Enum.filter(&(&1.step.__struct__ == Filter))
+          delay_steps =
+            steps
+            |> Enum.filter(&Step.is_delay_step?/1)
 
-      # Find delay steps before action step
-      delay_steps =
-        steps
-        |> Enum.take(index)
-        |> Enum.filter(&(&1.step.__struct__ == Delay))
+          filter_steps_before_delay =
+            if is_nil(first_delay_step_index) do
+              steps
+            else
+              Enum.take(steps, first_delay_step_index)
+            end
+            |> Enum.filter(&Step.is_filter_step?/1)
 
-      %RunnableAction{
-        filters: filter_steps |> Enum.map(& &1.step),
-        delays: delay_steps |> Enum.map(& &1.step),
-        action: action_step.step
-      }
-    end)
+          filter_steps_after_delay =
+            if is_nil(first_delay_step_index) do
+              []
+            else
+              Enum.drop(steps, first_delay_step_index)
+              |> Enum.filter(&Step.is_filter_step?/1)
+            end
+
+          {:ok, %RunnableAction{
+            filters: filter_steps_before_delay |> Enum.map(& &1.step),
+            delays: delay_steps |> Enum.map(& &1.step),
+            inline_filters: filter_steps_after_delay |> Enum.map(& &1.step),
+            action: action_step.step
+          }}
+        else
+          {:error, "Missing action step"}
+        end
+      end)
+      |> Error.choose()
+
+    runnable_actions
   end
 
   defp create_step(workflow_id, step_dto, repository) do
     repository.create_step(workflow_id, step_dto)
     |> Error.bind(&StepDto.to_domain/1)
+  end
+
+  defp split_by_action_steps(_, acc \\ [])
+
+  defp split_by_action_steps([], acc) do
+    acc
+  end
+
+  defp split_by_action_steps(steps, acc) do
+    {l1, l2} = Enum.split_while(steps, fn step -> not Step.is_action_step?(step) end)
+
+    case l2 do
+      [] -> acc ++ [l1]
+      [action | rest] -> split_by_action_steps(rest, acc ++ [l1 ++ [action]])
+    end
   end
 end

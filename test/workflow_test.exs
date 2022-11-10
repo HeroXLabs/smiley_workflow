@@ -37,11 +37,12 @@ defmodule WorkflowTest do
     test "returns a compiled scenario" do
       {:ok, filter_1} = Workflow.Filter.new(%{"conditions" => "visits_count:=:1"})
       {:ok, filter_2} = Workflow.Filter.new(%{"conditions" => "tags:=:vip"})
+      {:ok, filter_3} = Workflow.Filter.new(%{"conditions" => "tags:!=:vip"})
 
       scenario = %Workflow.Scenario{
         enabled: false,
         id: "123",
-        ordered_action_ids: ["step-2", "step-3", "step-4", "step-5", "step-6", "step-7"],
+        ordered_action_ids: ["step-2", "step-3", "step-4", "step-5", "step-6", "step-7", "step-8"],
         steps: [
           %Workflow.Step{
             description: "Check in with your team",
@@ -83,8 +84,14 @@ defmodule WorkflowTest do
             title: "Delay for"
           },
           %Workflow.Step{
-            description: "Send a text message to a customer",
+            description: "Continue only if the condition is met",
             id: "step-7",
+            step: filter_3,
+            title: "Continue only if"
+          },
+          %Workflow.Step{
+            description: "Send a text message to a customer",
+            id: "step-8",
             step: %Workflow.Action.SendSms{phone_number: "123-456-7890", text: "Hello again!"},
             title: "Send a text message"
           }
@@ -97,34 +104,36 @@ defmodule WorkflowTest do
       expected = %Workflow.RunnableScenario{
         actions: [
           %Workflow.RunnableAction{
+            filters: [
+              %Workflow.Filter{
+                conditions: {{:number, "visits_count"}, {{:equal, :number}, 1}}
+              }
+            ],
+            delays: [%Workflow.Delay{delay_unit: :hours, delay_value: 2}],
+            inline_filters: [],
             action: %Workflow.Action.SendSms{
               phone_number: "123-456-7890",
               text: "Hello"
-            },
-            delays: [%Workflow.Delay{delay_unit: :hours, delay_value: 2}],
-            filters: [
-              %Workflow.Filter{
-                conditions: {{:number, "visits_count"}, {{:equal, :number}, 1}}
-              }
-            ]
+            }
           },
           %Workflow.RunnableAction{
-            action: %Workflow.Action.SendSms{
-              phone_number: "123-456-7890",
-              text: "Hello again!"
-            },
-            delays: [
-              %Workflow.Delay{delay_unit: :hours, delay_value: 2},
-              %Workflow.Delay{delay_unit: :hours, delay_value: 1}
-            ],
             filters: [
-              %Workflow.Filter{
-                conditions: {{:number, "visits_count"}, {{:equal, :number}, 1}}
-              },
               %Workflow.Filter{
                 conditions: {{:selection, "tags"}, {{:equal, :string}, "vip"}}
               }
-            ]
+            ],
+            delays: [
+              %Workflow.Delay{delay_unit: :hours, delay_value: 1}
+            ],
+            inline_filters: [
+              %Workflow.Filter{
+                conditions: {{:selection, "tags"}, {{:not_equal, :string}, "vip"}}
+              }
+            ],
+            action: %Workflow.Action.SendSms{
+              phone_number: "123-456-7890",
+              text: "Hello again!"
+            }
           }
         ],
         id: "123",
