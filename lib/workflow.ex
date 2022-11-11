@@ -321,6 +321,12 @@ defmodule Workflow do
     |> Error.bind(&ScenarioDto.to_domain/1)
   end
 
+  def list_scenarios(workspace_id, repository) do
+    repository.list_scenarios(workspace_id)
+    |> Enum.map(&ScenarioDto.to_domain/1)
+    |> Error.choose()
+  end
+
   def update_scenario(scenario_id, attrs, repository) do
     scenario_id
     |> repository.update_scenario(attrs)
