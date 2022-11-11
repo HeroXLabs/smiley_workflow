@@ -15,4 +15,5 @@ defmodule Workflow.Repository do
   @callback get_step(Step.id()) :: {:ok, StepDto.t()} | {:error, :not_found}
   @callback update_step(Step.id(), NewStepDto.t()) :: {:ok, StepDto.t()} | {:error, any()}
   @callback update_step_value(Step.id(), map) :: {:ok, StepDto.t()} | {:error, any()}
+  @callback delete_step(Step.id()) :: :ok | {:error, any()}
 end

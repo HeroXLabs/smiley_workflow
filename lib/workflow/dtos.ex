@@ -51,11 +51,12 @@ defmodule Workflow.Dto do
     alias Workflow.{Step, Trigger, Filter, Delay, Action}
 
     @derive Jason.Encoder
-    @enforce_keys [:id, :title, :description, :type, :trigger, :action, :value]
-    defstruct [:id, :title, :description, :type, :trigger, :action, :value]
+    @enforce_keys [:id, :scenario_id, :title, :description, :type, :trigger, :action, :value]
+    defstruct [:id, :scenario_id, :title, :description, :type, :trigger, :action, :value]
 
     @type t :: %__MODULE__{
             id: binary,
+            scenario_id: binary,
             title: binary,
             description: binary,
             type: binary,
@@ -69,6 +70,7 @@ defmodule Workflow.Dto do
         {:ok,
          %Step{
            id: step_dto.id,
+           scenario_id: step_dto.scenario_id,
            title: step_dto.title,
            description: step_dto.description,
            step: step
@@ -79,6 +81,7 @@ defmodule Workflow.Dto do
     def from_domain(%Step{} = step) do
       %__MODULE__{
         id: step.id,
+        scenario_id: step.scenario_id,
         title: step.title,
         description: step.description,
         type: build_type(step.step),
@@ -96,12 +99,17 @@ defmodule Workflow.Dto do
 
     defp build_action(%Trigger{}), do: nil
     defp build_action(%Filter{}), do: "filter"
+    defp build_action(%Filter.Incomplete{}), do: "filter"
     defp build_action(%Delay{}), do: "delay"
+    defp build_action(%Delay.Incomplete{}), do: "delay"
     defp build_action(%Action.SendSms{}), do: "send_sms"
 
     defp build_value(%Trigger{} = trigger), do: trigger.context
     defp build_value(%Filter{} = filter), do: %{"conditions" => filter.raw_conditions}
-    defp build_value(%Delay{} = delay), do: %{"delay_value" => delay.delay_value, "delay_unit" => to_string(delay.delay_unit)}
+
+    defp build_value(%Delay{} = delay),
+      do: %{"delay_value" => delay.delay_value, "delay_unit" => to_string(delay.delay_unit)}
+
     defp build_value(step), do: Map.from_struct(step)
 
     defp build_step(%__MODULE__{type: "trigger", trigger: trigger, value: value}) do

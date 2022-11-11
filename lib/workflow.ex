@@ -176,8 +176,8 @@ defmodule Workflow do
   end
 
   defmodule Step do
-    @enforce_keys [:id, :title, :description, :step]
-    defstruct [:id, :title, :description, :step]
+    @enforce_keys [:id, :scenario_id, :title, :description, :step]
+    defstruct [:id, :scenario_id, :title, :description, :step]
 
     @type id :: binary
     @type step :: Trigger.t() | Filter.t() | Delay.t() | Action.t()
@@ -389,6 +389,17 @@ defmodule Workflow do
   def update_step(%StepUpdate.UpdateStep{} = update, repository) do
     repository.update_step_value(update.step.id, update.update.value)
     |> Error.bind(&StepDto.to_domain/1)
+  end
+
+  def delete_step(step_id, repository) do
+    with {:ok, step} <- get_step(step_id, repository),
+         {:ok, scenario} <- get_scenario(step.scenario_id, repository),
+         :ok <- repository.delete_step(step_id),
+         new_ordered_action_ids <- List.delete(scenario.ordered_action_ids, step_id),
+         {:ok, _scenario} <-
+           update_scenario(scenario.id, %{ordered_action_ids: new_ordered_action_ids}, repository) do
+      {:ok, step}
+    end
   end
 
   def new_step_dto(template_step_id) do

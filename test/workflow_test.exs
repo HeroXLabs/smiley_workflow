@@ -47,6 +47,7 @@ defmodule WorkflowTest do
           %Workflow.Step{
             description: "Check in with your team",
             id: "step-1",
+            scenario_id: "123",
             step: %Workflow.Trigger{
               context: %{},
               type: :check_in
@@ -56,6 +57,7 @@ defmodule WorkflowTest do
           %Workflow.Step{
             description: "Continue only if the condition is met",
             id: "step-2",
+            scenario_id: "123",
             step: filter_1,
             title: "Continue only if"
           },
@@ -63,17 +65,20 @@ defmodule WorkflowTest do
             description: "Delay the workflow for a given amount of time",
             id: "step-3",
             step: %Workflow.Delay{delay_value: 2, delay_unit: :hours},
+            scenario_id: "123",
             title: "Delay for"
           },
           %Workflow.Step{
             description: "Send a text message to a customer",
             id: "step-4",
+            scenario_id: "123",
             step: %Workflow.Action.SendSms{phone_number: "123-456-7890", text: "Hello"},
             title: "Send a text message"
           },
           %Workflow.Step{
             description: "Continue only if the condition is met",
             id: "step-5",
+            scenario_id: "123",
             step: filter_2,
             title: "Continue only if"
           },
@@ -81,17 +86,20 @@ defmodule WorkflowTest do
             description: "Delay the workflow for a given amount of time",
             id: "step-6",
             step: %Workflow.Delay{delay_value: 1, delay_unit: :hours},
+            scenario_id: "123",
             title: "Delay for"
           },
           %Workflow.Step{
             description: "Continue only if the condition is met",
             id: "step-7",
+            scenario_id: "123",
             step: filter_3,
             title: "Continue only if"
           },
           %Workflow.Step{
             description: "Send a text message to a customer",
             id: "step-8",
+            scenario_id: "123",
             step: %Workflow.Action.SendSms{phone_number: "123-456-7890", text: "Hello again!"},
             title: "Send a text message"
           }
@@ -306,6 +314,35 @@ defmodule WorkflowTest do
     end
   end
 
+  describe "#delete_step" do
+    test "delete a step" do
+      step_filter = Workflow.new_step_dto("step-filter")
+      step = build_step_dto(step_filter, "step-2")
+      scenario = build_scenario_dto([step_filter, Workflow.new_step_dto("step-delay")])
+
+      Workflow.Repository.Mock
+      |> expect(:get_step, fn id ->
+        assert step.id == id
+        {:ok, step}
+      end)
+      |> expect(:get_scenario, fn scenario_id -> 
+        assert scenario.id == scenario_id
+        {:ok, scenario}
+      end)
+      |> expect(:delete_step, fn id ->
+        assert step.id == id
+        :ok
+      end)
+      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+        assert attrs == %{ordered_action_ids: ["step-3"]}
+        scenario = build_scenario_dto([Workflow.new_step_dto("step-delay")])
+        {:ok, scenario}
+      end)
+
+      {:ok, _step} = Workflow.delete_step(step.id, Workflow.Repository.Mock)
+    end
+  end
+
   defp build_scenario_dto(new_step_dtos) do
     trigger_step = trigger_step()
 
@@ -316,7 +353,7 @@ defmodule WorkflowTest do
       end)
 
     %ScenarioDto{
-      id: "123",
+      id: "s123",
       workspace_id: "abc",
       enabled: false,
       title: "New Scenario",
@@ -328,6 +365,7 @@ defmodule WorkflowTest do
   defp trigger_step() do
     %StepDto{
       id: "step-1",
+      scenario_id: "123",
       title: "Check In",
       description: "Check in with your team",
       type: "trigger",
@@ -340,9 +378,10 @@ defmodule WorkflowTest do
     }
   end
 
-  defp build_step_dto(new_step_dto, id) do
+  defp build_step_dto(new_step_dto, id, scenario_id \\ "s123") do
     %StepDto{
       id: id,
+      scenario_id: scenario_id,
       title: new_step_dto.title,
       description: new_step_dto.description,
       type: new_step_dto.type,
