@@ -182,7 +182,7 @@ defmodule WorkflowTest do
         insert_at: :append
       }
 
-      {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
+      {:ok, _} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "add an emply delay step to a scenario" do
@@ -209,7 +209,7 @@ defmodule WorkflowTest do
         insert_at: :append
       }
 
-      {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
+      {:ok, _} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "add an emply action step to a scenario" do
@@ -236,7 +236,7 @@ defmodule WorkflowTest do
         insert_at: :append
       }
 
-      {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
+      {:ok, _} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
 
     test "insert an emply action step in the middle to a scenario" do
@@ -263,7 +263,7 @@ defmodule WorkflowTest do
         insert_at: {:insert_at, 1}
       }
 
-      {:ok, _step} = Workflow.add_step(params, Workflow.Repository.Mock)
+      {:ok, _} = Workflow.add_step(params, Workflow.Repository.Mock)
     end
   end
 

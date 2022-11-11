@@ -333,6 +333,10 @@ defmodule Workflow do
     |> Error.bind(&ScenarioDto.to_domain/1)
   end
 
+  def disable_scenario(scenario_id, repository) do
+    update_scenario(scenario_id, %{enabled: false}, repository)
+  end
+
   def add_step(%NewStepParams{} = params, repository) do
     step_dto = new_step_dto(params.template_step_id)
 
@@ -340,9 +344,9 @@ defmodule Workflow do
          {:ok, step} <- create_step(params.workflow_id, step_dto, repository),
          new_ordered_action_ids <-
            build_new_order_action_ids(params.insert_at, scenario.ordered_action_ids, step.id),
-         {:ok, _scenario} <-
+         {:ok, scenario} <-
            update_scenario(scenario.id, %{ordered_action_ids: new_ordered_action_ids}, repository) do
-      {:ok, step}
+      {:ok, {scenario, step}}
     end
   end
 
