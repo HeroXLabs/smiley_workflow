@@ -340,7 +340,7 @@ defmodule Workflow do
   def add_step(%NewStepParams{} = params, repository) do
     step_dto = new_step_dto(params.template_step_id)
 
-    with {:ok, scenario} <- get_scenario(params.workflow_id, repository),
+    with {:ok, scenario} <- disable_scenario(params.workflow_id, repository),
          {:ok, step} <- create_step(params.workflow_id, step_dto, repository),
          new_ordered_action_ids <-
            build_new_order_action_ids(params.insert_at, scenario.ordered_action_ids, step.id),
@@ -384,6 +384,7 @@ defmodule Workflow do
 
   def update_step(%UpdateStepParams{} = params, repository) do
     with {:ok, step} <- get_step(params.id, repository),
+         {:ok, _scenario} <- disable_scenario(step.scenario_id, repository),
          {:ok, step_update} <- StepUpdate.new(step, params) do
       update_step(step_update, repository)
     end
@@ -403,7 +404,7 @@ defmodule Workflow do
 
   def delete_step(step_id, repository) do
     with {:ok, step} <- get_step(step_id, repository),
-         {:ok, scenario} <- get_scenario(step.scenario_id, repository),
+         {:ok, scenario} <- disable_scenario(step.scenario_id, repository),
          :ok <- repository.delete_step(step_id),
          new_ordered_action_ids <- List.delete(scenario.ordered_action_ids, step.id),
          {:ok, scenario} <-
