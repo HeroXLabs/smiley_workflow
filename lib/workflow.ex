@@ -395,10 +395,10 @@ defmodule Workflow do
     with {:ok, step} <- get_step(step_id, repository),
          {:ok, scenario} <- get_scenario(step.scenario_id, repository),
          :ok <- repository.delete_step(step_id),
-         new_ordered_action_ids <- List.delete(scenario.ordered_action_ids, step_id),
-         {:ok, _scenario} <-
+         new_ordered_action_ids <- List.delete(scenario.ordered_action_ids, step.id),
+         {:ok, scenario} <-
            update_scenario(scenario.id, %{ordered_action_ids: new_ordered_action_ids}, repository) do
-      {:ok, step}
+      {:ok, {scenario, step}}
     end
   end
 

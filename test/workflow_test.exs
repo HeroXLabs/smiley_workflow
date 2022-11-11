@@ -339,7 +339,7 @@ defmodule WorkflowTest do
         {:ok, scenario}
       end)
 
-      {:ok, _step} = Workflow.delete_step(step.id, Workflow.Repository.Mock)
+      {:ok, _} = Workflow.delete_step(step.id, Workflow.Repository.Mock)
     end
   end
 
