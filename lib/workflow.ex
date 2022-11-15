@@ -131,15 +131,13 @@ defmodule Workflow do
       @enforce_keys [:action]
       defstruct [:action]
 
-      @type action :: :send_sms
+      @type action :: atom
       @type t :: %__MODULE__{action: action}
     end
 
     defmodule SendSms do
       @enforce_keys [:phone_number, :text]
       defstruct [:phone_number, :text]
-
-      # TODO: support {{appointment.employees.phone_number}} as phone_number
       @type t :: %__MODULE__{phone_number: binary, text: binary}
 
       def new(value) do
@@ -155,12 +153,26 @@ defmodule Workflow do
 
     @type t :: SendSms.t()
 
+    def from_json(%{"action" => action} = json) do
+      new(action, json)
+    end
+
     def new("send_sms", value) do
       SendSms.new(value)
     end
 
     def new(action, _value) do
       {:error, "Invalid action: #{action}"}
+    end
+  end
+
+  defimpl Jason.Encoder, for: Action.SendSms do
+    def encode(struct, opts) do
+      Jason.Encode.map(%{
+        "action" => "send_sms",
+        "phone_number" => struct.phone_number, 
+        "text" => struct.text
+      }, opts)
     end
   end
 
