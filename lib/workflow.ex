@@ -66,6 +66,16 @@ defmodule Workflow do
     def new(_) do
       {:ok, %Incomplete{}}
     end
+
+    defimpl Jason.Encoder, for: __MODULE__ do
+      def encode(%{raw_conditions: raw_conditions}, opts) do
+        Jason.Encode.string(raw_conditions, opts)
+      end
+    end
+
+    def from_json(raw_conditions) do
+      new(%{"conditions" => raw_conditions})
+    end
   end
 
   defmodule Delay do
@@ -108,6 +118,7 @@ defmodule Workflow do
       end
     end
 
+    @derive Jason.Encoder
     @enforce_keys [:delay_value, :delay_unit]
     defstruct [:delay_value, :delay_unit]
 
@@ -177,6 +188,10 @@ defmodule Workflow do
   end
 
   defmodule RunnableAction do
+    alias Workflow.JsonUtil
+
+    @derive Jason.Encoder
+    @enforce_keys [:filters, :delays, :inline_filters, :action]
     defstruct [:filters, :delays, :inline_filters, :action]
 
     @type t :: %__MODULE__{
@@ -185,6 +200,15 @@ defmodule Workflow do
             inline_filters: [Filter.t()],
             action: Action.t()
           }
+
+    def from_json(%{"filters" => filters, "delays" => delays, "inline_filters" => inline_filters, "action" => action}) do
+      with {:ok, filters} <- JsonUtil.from_json_array(filters, &Filter.from_json/1),
+           {:ok, delays} <- JsonUtil.from_json_array(delays, &Delay.new/1),
+           {:ok, inline_filters} <- JsonUtil.from_json_array(inline_filters, &Filter.from_json/1),
+           {:ok, action} <- Action.from_json(action) do
+        {:ok, %__MODULE__{filters: filters, delays: delays, inline_filters: inline_filters, action: action}}
+      end
+    end
   end
 
   defmodule Step do

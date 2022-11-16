@@ -3,7 +3,6 @@ defmodule Workflow.RunningScenario do
 
   defmodule TriggerContext do
     defmodule CheckInContext do
-      @derive Jason.Encoder
       @enforce_keys [:customer_id, :check_in_id]
       defstruct [:customer_id, :check_in_id]
 
@@ -11,10 +10,22 @@ defmodule Workflow.RunningScenario do
               customer_id: integer,
               check_in_id: term
             }
+
+      defimpl Jason.Encoder, for: __MODULE__ do
+        def encode(%{customer_id: customer_id, check_in_id: check_in_id}, opts) do
+          Jason.Encode.map(
+            %{
+              "type" => "check_in",
+              "customer_id" => customer_id,
+              "check_in_id" => check_in_id
+            },
+            opts
+          )
+        end
+      end
     end
 
     defmodule CancelAppointmentContext do
-      @derive Jason.Encoder
       @enforce_keys [:customer_id, :appointment_id]
       defstruct [:customer_id, :appointment_id]
 
@@ -22,6 +33,19 @@ defmodule Workflow.RunningScenario do
               customer_id: integer,
               appointment_id: term
             }
+
+      defimpl Jason.Encoder, for: __MODULE__ do
+        def encode(%{customer_id: customer_id, appointment_id: appointment_id}, opts) do
+          Jason.Encode.map(
+            %{
+              "type" => "cancel_appointment",
+              "customer_id" => customer_id,
+              "appointment_id" => appointment_id
+            },
+            opts
+          )
+        end
+      end
     end
 
     @derive Jason.Encoder
@@ -33,6 +57,31 @@ defmodule Workflow.RunningScenario do
             trigger_type: Trigger.TriggerType.t(),
             context: CheckInContext.t() | CancelAppointmentContext.t()
           }
+
+    def from_json(%{"workspace_id" => workspace_id, "trigger_type" => trigger_type, "context" => context}) do
+      with {:ok, trigger_type} <- Trigger.TriggerType.new(trigger_type),
+           {:ok, context} <- context_from_json(context) do
+        {:ok, %__MODULE__{workspace_id: workspace_id, trigger_type: trigger_type, context: context}}
+      end
+    end
+
+    def context_from_json(%{"type" => "check_in", "customer_id" => customer_id, "check_in_id" => check_in_id}) do
+      {:ok, %CheckInContext{
+        customer_id: customer_id,
+        check_in_id: check_in_id
+      }}
+    end
+
+    def context_from_json(%{"type" => "cancel_appointment", "customer_id" => customer_id, "appointment_id" => appointment_id}) do
+      {:ok, %CancelAppointmentContext{
+        customer_id: customer_id,
+        appointment_id: appointment_id
+      }}
+    end
+
+    def context_from_json(_) do
+      {:error, "Invalid trigger context json payload"}
+    end
   end
 
   defmodule TriggerContextPayload do
@@ -211,6 +260,8 @@ defmodule Workflow.RunningScenario do
   end
 
   defmodule InlineAction do
+    alias Workflow.JsonUtil
+
     @derive Jason.Encoder
     @enforce_keys [:filters, :action]
     defstruct [:filters, :action]
@@ -219,6 +270,13 @@ defmodule Workflow.RunningScenario do
             filters: [Filter.t()],
             action: Action.t()
           }
+
+    def from_json(%{"filters" => filters_json, "action" => action_json}) do
+      with {:ok, filters} <- JsonUtil.from_json_array(filters_json, &Filter.from_json/1),
+           {:ok, action} <- Action.from_json(action_json) do
+        {:ok, %InlineAction{filters: filters, action: action}}
+      end
+    end
   end
 
   defmodule ScheduledActionRun do
@@ -244,6 +302,8 @@ defmodule Workflow.RunningScenario do
   end
 
   defmodule ScenarioRun do
+    alias Workflow.{JsonUtil, RunnableAction}
+
     @derive Jason.Encoder
     @enforce_keys [
       :id,
@@ -273,6 +333,23 @@ defmodule Workflow.RunningScenario do
             pending_actions: [RunnableAction.t()],
             done_actions: [RunnableAction.t()]
           }
+
+    def from_json(%{"id" => id, "scenario_id" => scenario_id, "workspace_id" => workspace_id, "trigger_context" => trigger_context_json, "current_action" => current_action_json, "pending_actions" => pending_actions_json, "done_actions" => done_actions_json}) do
+      with {:ok, trigger_context} <- TriggerContext.from_json(trigger_context_json),
+        {:ok, current_action} <- InlineAction.from_json(current_action_json),
+        {:ok, pending_actions} <- JsonUtil.from_json_array(pending_actions_json, &RunnableAction.from_json/1),
+        {:ok, done_actions} <- JsonUtil.from_json_array(done_actions_json, &RunnableAction.from_json/1) do
+        {:ok, %__MODULE__{
+          id: id,
+          scenario_id: scenario_id,
+          workspace_id: workspace_id,
+          trigger_context: trigger_context,
+          current_action: current_action,
+          pending_actions: pending_actions,
+          done_actions: done_actions
+        }}
+      end
+    end
   end
 
   @spec start_scenario(TriggerContext.t(), term, term, term) ::
