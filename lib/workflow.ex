@@ -135,6 +135,22 @@ defmodule Workflow do
     def new(_) do
       {:ok, %Incomplete{}}
     end
+
+    def in_seconds(%__MODULE__{delay_value: delay_value, delay_unit: :seconds}) do
+      delay_value
+    end
+
+    def in_seconds(%__MODULE__{delay_value: delay_value, delay_unit: :minutes}) do
+      delay_value * 60
+    end
+
+    def in_seconds(%__MODULE__{delay_value: delay_value, delay_unit: :hours}) do
+      delay_value * 60 * 60
+    end
+
+    def in_seconds(%__MODULE__{delay_value: delay_value, delay_unit: :days}) do
+      delay_value * 60 * 60 * 24
+    end
   end
 
   defmodule Action do
