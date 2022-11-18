@@ -1,8 +1,8 @@
 defmodule Workflow.Dto do
   defmodule NewStepDto do
     @derive Jason.Encoder
-    @enforce_keys [:title, :description, :type, :trigger, :action, :value]
-    defstruct [:title, :description, :type, :trigger, :action, :value]
+    @enforce_keys [:title, :description, :type, :trigger, :action, :value, :context]
+    defstruct [:title, :description, :type, :trigger, :action, :value, :context]
 
     @type t :: %__MODULE__{
             title: binary,
@@ -10,7 +10,8 @@ defmodule Workflow.Dto do
             type: binary,
             trigger: binary | nil,
             action: binary | nil,
-            value: map | nil
+            value: map | nil,
+            context: map | nil
           }
   end
 
@@ -40,7 +41,8 @@ defmodule Workflow.Dto do
             type: "trigger",
             trigger: to_string(new_scenario.trigger.trigger),
             action: nil,
-            value: new_scenario.trigger.context
+            context: new_scenario.trigger.context,
+            value: nil
           }
         ]
       }
@@ -51,18 +53,39 @@ defmodule Workflow.Dto do
     alias Workflow.{Step, Trigger, Filter, Delay, Action}
 
     @derive Jason.Encoder
-    @enforce_keys [:id, :scenario_id, :title, :description, :type, :trigger, :action, :value]
-    defstruct [:id, :scenario_id, :title, :description, :type, :trigger, :action, :value]
+    @enforce_keys [
+      :id,
+      :scenario_id,
+      :title,
+      :description,
+      :type,
+      :trigger,
+      :action,
+      :context,
+      :value
+    ]
+    defstruct [
+      :id,
+      :scenario_id,
+      :title,
+      :description,
+      :type,
+      :trigger,
+      :action,
+      :context,
+      :value
+    ]
 
     @type t :: %__MODULE__{
             id: binary,
             scenario_id: binary,
             title: binary,
-            description: binary,
+            description: binary | nil,
             type: binary,
-            trigger: binary,
-            action: binary,
-            value: map
+            trigger: binary | nil,
+            action: binary | nil,
+            context: map | nil,
+            value: map | nil
           }
 
     def to_domain(%__MODULE__{} = step_dto) do
@@ -87,6 +110,7 @@ defmodule Workflow.Dto do
         type: build_type(step.step),
         trigger: build_trigger(step.step),
         action: build_action(step.step),
+        context: build_context(step.step),
         value: build_value(step.step)
       }
     end
@@ -103,8 +127,12 @@ defmodule Workflow.Dto do
     defp build_action(%Delay{}), do: "delay"
     defp build_action(%Delay.Incomplete{}), do: "delay"
     defp build_action(%Action.SendSms{}), do: "send_sms"
+    defp build_action(%Action.Incomplete{action: action}), do: to_string(action)
 
-    defp build_value(%Trigger{} = trigger), do: trigger.context
+    defp build_context(%Trigger{} = trigger), do: trigger.context
+    defp build_context(_), do: nil
+
+    defp build_value(%Trigger{}), do: nil
     defp build_value(%Filter{} = filter), do: %{"conditions" => filter.raw_conditions}
 
     defp build_value(%Delay{} = delay),
@@ -112,8 +140,8 @@ defmodule Workflow.Dto do
 
     defp build_value(step), do: Map.from_struct(step)
 
-    defp build_step(%__MODULE__{type: "trigger", trigger: trigger, value: value}) do
-      Trigger.new(trigger, value)
+    defp build_step(%__MODULE__{type: "trigger", trigger: trigger, context: context}) do
+      Trigger.new(trigger, context)
     end
 
     defp build_step(%__MODULE__{type: "action", action: "delay", value: value}) do
@@ -157,19 +185,19 @@ defmodule Workflow.Dto do
           |> Enum.find(fn step -> Step.is_trigger_step?(step) end)
 
         if is_nil(trigger_step) do
-          raise "Scenario must have a trigger step"
+          {:error, "Scenario must have a trigger step"}
+        else
+          {:ok,
+           %Scenario{
+             id: scenario_dto.id,
+             workspace_id: scenario_dto.workspace_id,
+             enabled: scenario_dto.enabled,
+             title: scenario_dto.title,
+             trigger_id: trigger_step.id,
+             ordered_action_ids: scenario_dto.ordered_action_ids,
+             steps: steps
+           }}
         end
-
-        {:ok,
-         %Scenario{
-           id: scenario_dto.id,
-           workspace_id: scenario_dto.workspace_id,
-           enabled: scenario_dto.enabled,
-           title: scenario_dto.title,
-           trigger_id: trigger_step.id,
-           ordered_action_ids: scenario_dto.ordered_action_ids,
-           steps: steps
-         }}
       end
     end
   end

@@ -75,6 +75,8 @@ defmodule Workflow.TypedConditions do
     selection: %{
       "=" => {:equal, :string},
       "!=" => {:not_equal, :string},
+      "}" => {:equal, :string},
+      "!}" => {:not_equal, :string}
     }
   }
 

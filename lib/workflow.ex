@@ -19,6 +19,8 @@ defmodule Workflow do
           {:error, "Invalid trigger type: #{raw_type}"}
         end
       end
+
+      def value(type), do: to_string(type)
     end
 
     @enforce_keys [:type, :context]
@@ -246,6 +248,11 @@ defmodule Workflow do
 
     def is_filter_step?(%__MODULE__{step: %Filter{}}), do: true
     def is_filter_step?(_), do: false
+
+    def is_incomplete_step?(%__MODULE__{step: %Action.Incomplete{}}), do: true
+    def is_incomplete_step?(%__MODULE__{step: %Filter.Incomplete{}}), do: true
+    def is_incomplete_step?(%__MODULE__{step: %Delay.Incomplete{}}), do: true
+    def is_incomplete_step?(_), do: false
   end
 
   defmodule Scenario do
@@ -345,6 +352,7 @@ defmodule Workflow do
     @type t :: %__MODULE__{id: binary, template_step_id: binary, value: map}
 
     def new(%{"id" => step_id} = params) do
+      IO.inspect params
       {:ok,
        %__MODULE__{
          id: step_id,
@@ -478,19 +486,24 @@ defmodule Workflow do
       type: "action",
       trigger: nil,
       action: step_template.action,
-      value: nil
+      value: nil,
+      context: nil
     }
   end
 
-  @spec compile_scenario(Scenario.t()) :: RunnableScenario.t()
+  @spec compile_scenario(Scenario.t()) :: {:ok, RunnableScenario.t()} | {:error, any}
   def compile_scenario(%Scenario{} = scenario) do
-    %RunnableScenario{
-      id: scenario.id,
-      workspace_id: scenario.workspace_id,
-      title: scenario.title,
-      trigger: compile_trigger(scenario.trigger_id, scenario.steps),
-      actions: compile_actions(scenario.ordered_action_ids, scenario.steps)
-    }
+    if Enum.any?(scenario.steps, &Step.is_incomplete_step?/1) do
+      {:error, "Scenario is incomplete"}
+    else
+      {:ok, %RunnableScenario{
+        id: scenario.id,
+        workspace_id: scenario.workspace_id,
+        title: scenario.title,
+        trigger: compile_trigger(scenario.trigger_id, scenario.steps),
+        actions: compile_actions(scenario.ordered_action_ids, scenario.steps)
+      }}
+    end
   end
 
   @spec compile_trigger(Trigger.trigger(), [Step.t()]) :: Trigger.t()

@@ -1,7 +1,7 @@
 defmodule Workflow.RunningScenario.ContextPayloadRepository do
-  alias Workflow.RunningScenario.{TriggerContext}
+  alias Workflow.RunningScenario.{TriggerContext,TriggerContextPayload}
 
-  @callback find_context_payload(TriggerContext.t()) :: {:ok, TriggerContext.payload()} | {:error, any()}
+  @callback find_context_payload(TriggerContext.t()) :: {:ok, TriggerContextPayload.t()} | {:error, any()}
 end
 
 defmodule Workflow.RunningScenario.ScenarioRepository do

@@ -1,5 +1,5 @@
 defmodule Workflow.RunningScenario do
-  alias Workflow.{Trigger, Action, Filter, TypedConditions, Interpolation, Delay}
+  alias Workflow.{Trigger, Action, Filter, TypedConditions, Delay}
 
   defmodule TriggerContext do
     defmodule CheckInContext do
@@ -101,15 +101,18 @@ defmodule Workflow.RunningScenario do
 
   defmodule TriggerContextPayload do
     defmodule Business do
+      alias Workflow.RunningScenario.SMSSender
+
       @derive Jason.Encoder
-      @enforce_keys [:id, :name, :timezone, :phone_number]
-      defstruct [:id, :name, :timezone, :phone_number]
+      @enforce_keys [:id, :name, :timezone, :phone_number, :sms_provider]
+      defstruct [:id, :name, :timezone, :phone_number, :sms_provider]
 
       @type t :: %__MODULE__{
               id: String.t(),
               name: String.t(),
               timezone: String.t(),
-              phone_number: String.t()
+              phone_number: String.t(),
+              sms_provider: SMSSender.sms_provider()
             }
     end
 
@@ -380,7 +383,14 @@ defmodule Workflow.RunningScenario do
 
   @spec start_scenario(TriggerContext.t(), term, term, term, term, term) ::
           {:ok, ScenarioRun.t()} | {:error, any}
-  def start_scenario(trigger_context, scenario_repository, context_repository, id_gen, clock, scheduler) do
+  def start_scenario(
+        trigger_context,
+        scenario_repository,
+        context_repository,
+        id_gen,
+        clock,
+        scheduler
+      ) do
     with {:ok, runnable_scenario} <- scenario_repository.find_runnable_scenario(trigger_context),
          {:ok, context_payload} <- context_repository.find_context_payload(trigger_context) do
       scenario_run = %NewScenarioRun{
@@ -414,7 +424,7 @@ defmodule Workflow.RunningScenario do
         done_actions: []
       }
 
-      delays_in_seconds = 
+      delays_in_seconds =
         next_action.delays
         |> Enum.map(&Delay.in_seconds/1)
         |> Enum.sum()
@@ -443,7 +453,7 @@ defmodule Workflow.RunningScenario do
                 current_action: current_action
             }
 
-            delays_in_seconds = 
+            delays_in_seconds =
               next_action.delays
               |> Enum.map(&Delay.in_seconds/1)
               |> Enum.sum()
@@ -486,14 +496,10 @@ defmodule Workflow.RunningScenario do
         clock,
         sms_sender
       ) do
-    conditions_payload = ConditionsPayload.to_conditions_payload(context_payload)
-
     if run_context_filter(filters, context_payload, clock) do
       case action do
         %Action.SendSms{phone_number: to_phone, text: text} ->
-          from_phone = context_payload.business.phone_number
-          msg = Interpolation.interpolate(text, conditions_payload)
-          sms_sender.send_sms(from_phone, to_phone, msg)
+          sms_sender.send_sms(to_phone, text, context_payload)
 
           {:ok, inline_action}
 
@@ -509,7 +515,6 @@ defmodule Workflow.RunningScenario do
     conditions_payload = ConditionsPayload.to_conditions_payload(context_payload)
     timezone = context_payload.business.timezone
     date = clock.today!(timezone)
-
 
     filters
     |> Enum.all?(fn %Filter{conditions: conditions} ->

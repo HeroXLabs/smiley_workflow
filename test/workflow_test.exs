@@ -153,7 +153,82 @@ defmodule WorkflowTest do
         workspace_id: "abc"
       }
 
-      assert Workflow.compile_scenario(scenario) == expected
+      {:ok, runnable_scenario} = Workflow.compile_scenario(scenario)
+      assert runnable_scenario == expected
+    end
+
+    test "returns error when there is incomplete step" do
+      scenario = %Workflow.Scenario{
+        enabled: false,
+        id: "123",
+        ordered_action_ids: ["step-2", "step-3", "step-4", "step-5", "step-6", "step-7", "step-8"],
+        steps: [
+          %Workflow.Step{
+            description: "Check in with your team",
+            id: "step-1",
+            scenario_id: "123",
+            step: %Workflow.Trigger{
+              context: %{},
+              type: :check_in
+            },
+            title: "Check In"
+          },
+          %Workflow.Step{
+            description: "Continue only if the condition is met",
+            id: "step-2",
+            scenario_id: "123",
+            step: %Workflow.Filter.Incomplete{},
+            title: "Continue only if"
+          },
+          %Workflow.Step{
+            description: "Delay the workflow for a given amount of time",
+            id: "step-3",
+            step: %Workflow.Delay.Incomplete{},
+            scenario_id: "123",
+            title: "Delay for"
+          },
+          %Workflow.Step{
+            description: "Send a text message to a customer",
+            id: "step-4",
+            scenario_id: "123",
+            step: %Workflow.Action.Incomplete{action: :send_sms},
+            title: "Send a text message"
+          },
+          %Workflow.Step{
+            description: "Continue only if the condition is met",
+            id: "step-5",
+            scenario_id: "123",
+            step: Workflow.Filter.new(%{"conditions" => "tags:=:vip"}),
+            title: "Continue only if"
+          },
+          %Workflow.Step{
+            description: "Delay the workflow for a given amount of time",
+            id: "step-6",
+            step: %Workflow.Delay{delay_value: 1, delay_unit: :hours},
+            scenario_id: "123",
+            title: "Delay for"
+          },
+          %Workflow.Step{
+            description: "Continue only if the condition is met",
+            id: "step-7",
+            scenario_id: "123",
+            step: %Workflow.Filter.Incomplete{},
+            title: "Continue only if"
+          },
+          %Workflow.Step{
+            description: "Send a text message to a customer",
+            id: "step-8",
+            scenario_id: "123",
+            step: %Workflow.Action.SendSms{phone_number: "123-456-7890", text: "Hello again!"},
+            title: "Send a text message"
+          }
+        ],
+        title: "New Scenario",
+        trigger_id: "step-1",
+        workspace_id: "abc"
+      }
+
+      {:error, _err} =  Workflow.compile_scenario(scenario)
     end
   end
 
@@ -385,10 +460,11 @@ defmodule WorkflowTest do
       type: "trigger",
       trigger: "check_in",
       action: nil,
-      value: %{
+      context: %{
         "channel" => "C123",
         "text" => "How are you doing today?"
-      }
+      },
+      value: nil
     }
   end
 
@@ -401,7 +477,8 @@ defmodule WorkflowTest do
       type: new_step_dto.type,
       trigger: new_step_dto.trigger,
       action: new_step_dto.action,
-      value: new_step_dto.value
+      value: new_step_dto.value,
+      context: nil
     }
   end
 end

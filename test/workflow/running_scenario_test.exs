@@ -19,7 +19,8 @@ defmodule Workflow.RunningScenarioTest do
         id: "w123",
         name: "My Business",
         timezone: "America/New_York",
-        phone_number: "3216549870"
+        phone_number: "3216549870",
+        sms_provider: :twilio
       }
 
       customer = %TriggerContextPayload.Customer{
@@ -95,7 +96,7 @@ defmodule Workflow.RunningScenarioTest do
         Date.from_iso8601!("2020-01-01")
       end)
 
-      expect(Workflow.RunningScenario.SMSSender.Mock, :send_sms, fn _, _, _ ->
+      expect(Workflow.RunningScenario.SMSSender.Mock, :send_sms, fn _to, _text, _context_payload ->
         :ok
       end)
 
@@ -223,7 +224,7 @@ defmodule Workflow.RunningScenarioTest do
           delays: [%Workflow.Delay{delay_unit: :hours, delay_value: 2}],
           inline_filters: [],
           action: %Workflow.Action.SendSms{
-            phone_number: "123-456-7890",
+            phone_number: "{{phone_number}}",
             text: "Hello"
           }
         },
