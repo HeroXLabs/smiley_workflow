@@ -352,7 +352,6 @@ defmodule Workflow do
     @type t :: %__MODULE__{id: binary, template_step_id: binary, value: map}
 
     def new(%{"id" => step_id} = params) do
-      IO.inspect params
       {:ok,
        %__MODULE__{
          id: step_id,

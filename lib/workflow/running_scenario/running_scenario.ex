@@ -139,7 +139,7 @@ defmodule Workflow.RunningScenario do
 
         @type t :: %__MODULE__{
                 id: String.t(),
-                services: list(String.t())
+                services: list(integer)
               }
       end
 
@@ -169,24 +169,26 @@ defmodule Workflow.RunningScenario do
 
       defmodule Appointment do
         @derive Jason.Encoder
-        @enforce_keys [:id, :services, :employee_1]
-        defstruct [:id, :services, :employee_1]
+        @enforce_keys [:id, :start_at, :services, :employees]
+        defstruct [:id, :start_at, :services, :employees]
 
         @type t :: %__MODULE__{
                 id: String.t(),
+                start_at: DateTime.t(),
                 services: list(String.t()),
-                employee_1: Employee.t()
+                employees: list(String.t())
               }
       end
 
       @derive Jason.Encoder
-      @enforce_keys [:business, :customer, :appointment]
-      defstruct [:business, :customer, :appointment]
+      @enforce_keys [:business, :customer, :appointment, :employee_1]
+      defstruct [:business, :customer, :appointment, :employee_1]
 
       @type t :: %__MODULE__{
               business: Business.t(),
               customer: Customer.t(),
-              appointment: Appointment.t()
+              appointment: Appointment.t(),
+              employee_1: Employee.t()
             }
     end
 
@@ -226,7 +228,8 @@ defmodule Workflow.RunningScenario do
     def to_conditions_payload(%TriggerContextPayload.CancelAppointmentContextPayload{
           business: business,
           customer: customer,
-          appointment: appointment
+          appointment: appointment,
+          employee_1: employee_1
         }) do
       %{
         "first_name" => customer.first_name,
@@ -240,12 +243,14 @@ defmodule Workflow.RunningScenario do
           "timezone" => business.timezone
         },
         "appointment" => %{
+          "start_at" => appointment.start_at,
           "services" => appointment.services,
-          "employee_1" => %{
-            "id" => appointment.employee_1.id,
-            "first_name" => appointment.employee_1.first_name,
-            "phone_number" => appointment.employee_1.phone_number
-          }
+          "employees" => appointment.employees
+        },
+        "employee_1" => %{
+          "id" => employee_1.id,
+          "first_name" => employee_1.first_name,
+          "phone_number" => employee_1.phone_number
         }
       }
     end
@@ -436,36 +441,41 @@ defmodule Workflow.RunningScenario do
     end
   end
 
-  def run_scenario(%ScenarioRun{} = scenario_run, context_repository, clock, scheduler) do
+  def run_scenario(%ScenarioRun{pending_actions: []}, _context_repository, _clock, _scheduler) do
+    {:error, "No more actions to run"}
+  end
+
+  def run_scenario(
+        %ScenarioRun{pending_actions: pending_actions} = scenario_run,
+        context_repository,
+        clock,
+        scheduler
+      ) do
     with {:ok, context_payload} <-
            context_repository.find_context_payload(scenario_run.trigger_context) do
-      case scenario_run.pending_actions do
-        [next_action | rest_actions] ->
-          current_action = %InlineAction{
-            filters: next_action.inline_filters,
-            action: next_action.action
-          }
+      [next_action | rest_actions] = pending_actions
 
-          if run_context_filter(next_action.filters, context_payload, clock) do
-            updated_scenario_run = %ScenarioRun{
-              scenario_run
-              | pending_actions: rest_actions,
-                current_action: current_action
-            }
+      current_action = %InlineAction{
+        filters: next_action.inline_filters,
+        action: next_action.action
+      }
 
-            delays_in_seconds =
-              next_action.delays
-              |> Enum.map(&Delay.in_seconds/1)
-              |> Enum.sum()
+      if run_context_filter(next_action.filters, context_payload, clock) do
+        updated_scenario_run = %ScenarioRun{
+          scenario_run
+          | pending_actions: rest_actions,
+            current_action: current_action
+        }
 
-            # Schedule run_action
-            scheduler.schedule(updated_scenario_run, delays_in_seconds, clock)
-          else
-            {:error, "Failed to pass context filter"}
-          end
+        delays_in_seconds =
+          next_action.delays
+          |> Enum.map(&Delay.in_seconds/1)
+          |> Enum.sum()
 
-        _ ->
-          {:error, "No more actions to run"}
+        # Schedule run_action
+        scheduler.schedule(updated_scenario_run, delays_in_seconds, clock)
+      else
+        {:error, "Failed to pass context filter"}
       end
     end
   end

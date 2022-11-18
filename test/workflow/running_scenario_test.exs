@@ -14,7 +14,7 @@ defmodule Workflow.RunningScenarioTest do
   setup :verify_on_exit!
 
   describe ".start_scenario" do
-    test "starts a new scenario run" do
+    test "starts a check in scenario run" do
       business = %TriggerContextPayload.Business{
         id: "w123",
         name: "My Business",
@@ -34,7 +34,7 @@ defmodule Workflow.RunningScenarioTest do
 
       check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
         id: "c123",
-        services: ["service1", "service2"]
+        services: [1, 2]
       }
 
       trigger_context = %TriggerContext{
@@ -154,12 +154,120 @@ defmodule Workflow.RunningScenarioTest do
         Workflow.RunningScenario.Scheduler.Mock
       )
     end
+
+    test "starts a cancel appointment scenario run" do
+      business = %TriggerContextPayload.Business{
+        id: "w123",
+        name: "My Business",
+        timezone: "America/New_York",
+        phone_number: "3216549870",
+        sms_provider: :twilio
+      }
+
+      customer = %TriggerContextPayload.Customer{
+        id: 1,
+        first_name: "John",
+        phone_number: "1234567890",
+        tags: [],
+        visits_count: 1,
+        last_visit_at: Calendar.DateTime.from_erl!({{2022, 1, 1}, {10,0,0}}, "America/New_York")
+      }
+
+      appointment = %TriggerContextPayload.CancelAppointmentContextPayload.Appointment{
+        id: "a123",
+        services: ["s1", "s2"],
+        start_at: Calendar.DateTime.from_erl!({{2022, 1, 1}, {10,0,0}}, "America/New_York"),
+        employees: ["e1", "e2"]
+      }
+
+      employee_1 = %TriggerContextPayload.CancelAppointmentContextPayload.Employee{
+        id: "e1",
+        first_name: "John",
+        phone_number: "4567890123"
+      }
+
+      trigger_context = %TriggerContext{
+        workspace_id: "w123",
+        trigger_type: :cancel_appointment,
+        context: %TriggerContext.CancelAppointmentContext{
+          customer_id: 1,
+          appointment_id: "a123"
+        }
+      }
+
+      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenario, fn _ ->
+        {:ok, runnable_scenario_2()}
+      end)
+
+      expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
+        {:ok, %TriggerContextPayload.CancelAppointmentContextPayload{
+          customer: customer,
+          appointment: appointment,
+          business: business,
+          employee_1: employee_1
+        }}
+      end)
+
+      expect(Workflow.RunningScenario.Clock.Mock, :today!, fn _ ->
+        Date.from_iso8601!("2020-01-01")
+      end)
+
+      expect(Workflow.RunningScenario.IdGen.Mock, :generate, fn ->
+        "123"
+      end)
+
+      expect(Workflow.RunningScenario.Scheduler.Mock, :schedule, fn scenario_run, seconds, _clock ->
+        assert scenario_run.current_action
+        assert Enum.count(scenario_run.pending_actions) == 0
+        assert seconds == 86400
+
+        {:ok, expected} = ScenarioRun.from_json(Jason.decode!(Jason.encode!(scenario_run)))
+        assert expected == scenario_run
+
+        RunningScenario.run_action(
+          scenario_run,
+          Workflow.RunningScenario.ContextPayloadRepository.Mock,
+          Workflow.RunningScenario.Clock.Mock,
+          Workflow.RunningScenario.Scheduler.Mock,
+          Workflow.RunningScenario.SMSSender.Mock
+        )
+        :ok
+      end)
+
+      expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
+        {:ok, %TriggerContextPayload.CancelAppointmentContextPayload{
+          customer: customer,
+          appointment: appointment,
+          business: business,
+          employee_1: employee_1
+        }}
+      end)
+
+      expect(Workflow.RunningScenario.Clock.Mock, :today!, fn _ ->
+        Date.from_iso8601!("2020-01-01")
+      end)
+
+      expect(Workflow.RunningScenario.SMSSender.Mock, :send_sms, fn _to, _text, _context_payload ->
+        :ok
+      end)
+
+      RunningScenario.start_scenario(
+        trigger_context,
+        Workflow.RunningScenario.ScenarioRepository.Mock,
+        Workflow.RunningScenario.ContextPayloadRepository.Mock,
+        Workflow.RunningScenario.IdGen.Mock,
+        Workflow.RunningScenario.Clock.Mock,
+        Workflow.RunningScenario.Scheduler.Mock
+      )
+    end
   end
 
   test "interpolation" do
-    string = "Hello {{person.name}}!"
-    bindings = %{"person" => %{"name" => "World"}}
-    assert "Hello World!" == Interpolation.interpolate(string, bindings)
+    timezone = "America/Los_Angeles"
+    datetime = Calendar.DateTime.from_erl!({{2022, 1, 1}, {10,0,0}}, timezone)
+    string = "Hello {{person.name}}! Your last visit was {{last_visit_at}}"
+    bindings = %{"person" => %{"name" => "Joe"}, "last_visit_at" => datetime}
+    assert "Hello Joe! Your last visit was 10:00 AM Saturday, 01 Jan 2022" == Interpolation.interpolate(string, timezone, bindings)
   end
 
   test "scenario run json encode/decode" do
@@ -251,8 +359,28 @@ defmodule Workflow.RunningScenarioTest do
         }
       ],
       id: "s123",
-      title: "New Scenario",
+      title: "Check In Scenario",
       trigger: %Workflow.Trigger{context: %{}, type: :check_in},
+      workspace_id: "w123"
+    }
+  end
+
+  defp runnable_scenario_2() do
+    %Workflow.RunnableScenario{
+      actions: [
+        %Workflow.RunnableAction{
+          filters: [],
+          delays: [%Workflow.Delay{delay_unit: :days, delay_value: 1}],
+          inline_filters: [],
+          action: %Workflow.Action.SendSms{
+            phone_number: "{{employee_1.phone_number}}",
+            text: "Appointment with {{first_name}} at {{appointment.start_at}} has been cancelled."
+          }
+        }
+      ],
+      id: "s123",
+      title: "Cancel Appointment Scenario",
+      trigger: %Workflow.Trigger{context: %{}, type: :cancel_appointment},
       workspace_id: "w123"
     }
   end
