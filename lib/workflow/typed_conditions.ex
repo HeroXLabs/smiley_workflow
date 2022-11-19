@@ -108,9 +108,11 @@ defmodule Workflow.TypedConditions do
     _,
     _
   ) do
+    keys = String.split(key, ".")
+
     items =
       payload
-      |> get_in([key])
+      |> get_in(keys)
       |> List.wrap()
       |> Enum.map(&to_string/1)
       |> Enum.map(&String.downcase/1)
