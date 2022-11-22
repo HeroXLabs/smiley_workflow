@@ -79,7 +79,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.ContextPayloadRepository.Mock,
           Workflow.RunningScenario.Clock.Mock,
           Workflow.RunningScenario.Scheduler.Mock,
-          Workflow.RunningScenario.SMSSender.Mock
+          Workflow.RunningScenario.SMSSender.Mock,
+          Workflow.RunningScenario.CouponSender.Mock
         )
         :ok
       end)
@@ -137,7 +138,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.ContextPayloadRepository.Mock,
           Workflow.RunningScenario.Clock.Mock,
           Workflow.RunningScenario.Scheduler.Mock,
-          Workflow.RunningScenario.SMSSender.Mock
+          Workflow.RunningScenario.SMSSender.Mock,
+          Workflow.RunningScenario.CouponSender.Mock
         )
 
         assert error == "Failed to pass context filter"
@@ -229,7 +231,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.ContextPayloadRepository.Mock,
           Workflow.RunningScenario.Clock.Mock,
           Workflow.RunningScenario.Scheduler.Mock,
-          Workflow.RunningScenario.SMSSender.Mock
+          Workflow.RunningScenario.SMSSender.Mock,
+          Workflow.RunningScenario.CouponSender.Mock
         )
         :ok
       end)
