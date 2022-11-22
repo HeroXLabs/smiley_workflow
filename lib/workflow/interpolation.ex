@@ -16,6 +16,11 @@ defmodule Workflow.Interpolation do
                 "expires_date" -> human_readable_format_in_date(value, timezone)
                 _ -> human_readable_format_in_date_time(value, timezone)
               end
+            :string ->
+              case key do
+                "first_name" -> value || "there"
+                _ -> value
+              end
             _ ->
               value
           end
