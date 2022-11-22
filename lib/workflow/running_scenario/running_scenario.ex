@@ -25,6 +25,29 @@ defmodule Workflow.RunningScenario do
       end
     end
 
+    defmodule CheckOutContext do
+      @enforce_keys [:customer_id, :check_out_id]
+      defstruct [:customer_id, :check_out_id]
+
+      @type t :: %__MODULE__{
+              customer_id: integer,
+              check_out_id: term
+            }
+
+      defimpl Jason.Encoder, for: __MODULE__ do
+        def encode(%{customer_id: customer_id, check_out_id: check_out_id}, opts) do
+          Jason.Encode.map(
+            %{
+              "type" => "check_out",
+              "customer_id" => customer_id,
+              "check_out_id" => check_out_id
+            },
+            opts
+          )
+        end
+      end
+    end
+
     defmodule CancelAppointmentContext do
       @enforce_keys [:customer_id, :appointment_id]
       defstruct [:customer_id, :appointment_id]
@@ -79,6 +102,18 @@ defmodule Workflow.RunningScenario do
        %CheckInContext{
          customer_id: customer_id,
          check_in_id: check_in_id
+       }}
+    end
+
+    def context_from_json(%{
+          "type" => "check_out",
+          "customer_id" => customer_id,
+          "check_out_id" => check_out_id
+        }) do
+      {:ok,
+       %CheckOutContext{
+         customer_id: customer_id,
+         check_out_id: check_out_id
        }}
     end
 
@@ -154,6 +189,29 @@ defmodule Workflow.RunningScenario do
             }
     end
 
+    defmodule CheckOutContextPayload do
+      defmodule CheckOut do
+        @derive Jason.Encoder
+        @enforce_keys [:id, :services]
+        defstruct [:id, :services]
+
+        @type t :: %__MODULE__{
+                id: String.t(),
+                services: list(integer)
+              }
+      end
+
+      @derive Jason.Encoder
+      @enforce_keys [:business, :customer, :check_out]
+      defstruct [:business, :customer, :check_out]
+
+      @type t :: %__MODULE__{
+              business: Business.t(),
+              customer: Customer.t(),
+              check_out: CheckOut.t()
+            }
+    end
+
     defmodule CancelAppointmentContextPayload do
       defmodule Employee do
         @derive Jason.Encoder
@@ -192,7 +250,7 @@ defmodule Workflow.RunningScenario do
             }
     end
 
-    @type t :: CheckInContextPayload.t() | CancelAppointmentContextPayload.t()
+    @type t :: CheckInContextPayload.t() | CheckOutContextPayload.t() | CancelAppointmentContextPayload.t()
   end
 
   defprotocol ConditionsPayload do
@@ -219,6 +277,30 @@ defmodule Workflow.RunningScenario do
         },
         "check_in" => %{
           "services" => check_in.services
+        }
+      }
+    end
+  end
+
+  defimpl ConditionsPayload, for: TriggerContextPayload.CheckOutContextPayload do
+    def to_conditions_payload(%TriggerContextPayload.CheckOutContextPayload{
+          business: business,
+          customer: customer,
+          check_out: check_out
+        }) do
+      %{
+        "first_name" => customer.first_name,
+        "phone_number" => customer.phone_number,
+        "tags" => customer.tags,
+        "visits_count" => customer.visits_count,
+        "last_visit_at" => customer.last_visit_at,
+        "business" => %{
+          "id" => business.id,
+          "name" => business.name,
+          "timezone" => business.timezone
+        },
+        "check_in" => %{
+          "services" => check_out.services
         }
       }
     end
@@ -551,29 +633,5 @@ defmodule Workflow.RunningScenario do
     |> Enum.all?(fn %Filter{conditions: conditions} ->
       TypedConditions.run_conditions(conditions, conditions_payload, timezone, date)
     end)
-  end
-
-  def build_context_payload(
-        %TriggerContext.CheckInContext{} = context,
-        repository
-      ) do
-    with {:ok,
-          %TriggerContextPayload.CheckInContextPayload{customer: customer, check_in: check_in}} <-
-           repository.get_context_payload(context) do
-      %{
-        "customer" => %{
-          "id" => context.customer_id,
-          "phone_number" => customer.phone_number,
-          "first_name" => customer.first_name,
-          "tags" => customer.tags,
-          "visits_count" => customer.visits_count,
-          "last_visit_at" => customer.last_visit_at
-        },
-        "check_in" => %{
-          "id" => check_in.id,
-          "services" => check_in.services
-        }
-      }
-    end
   end
 end

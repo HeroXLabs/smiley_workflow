@@ -41,7 +41,26 @@ defmodule Workflow.Template do
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
           ],
-          "check-in" => [
+          "check_in" => [
+            %{id: "services", name: "Check-in services", category: "selection"}
+          ]
+        }
+      },
+      %TriggerTemplate{
+        id: "step-check-out",
+        title: "User checks out",
+        description: "Trigger when a user checks out",
+        type: "trigger",
+        trigger: "check_out",
+        context: %{
+          "customer" => [
+            %{id: "phone_number", name: "Customer phone number", category: "string"},
+            %{id: "first_name", name: "Customer first name", category: "string"},
+            %{id: "tags", name: "Customer tags", category: "array"},
+            %{id: "visits_count", name: "Number of visits", category: "number"},
+            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+          ],
+          "check_in" => [
             %{id: "services", name: "Check-in services", category: "selection"}
           ]
         }
