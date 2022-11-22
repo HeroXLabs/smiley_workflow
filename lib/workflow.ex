@@ -204,11 +204,22 @@ defmodule Workflow do
                phone_number: phone_number,
                text: text,
                coupon_title: coupon_title,
-               coupon_expires_in_days: coupon_expires_in_days
+               coupon_expires_in_days: to_integer(coupon_expires_in_days)
              }}
 
           _ ->
             {:ok, %Incomplete{action: :send_coupon}}
+        end
+      end
+
+      defp to_integer(value) when is_integer(value) do
+        value
+      end
+
+      defp to_integer(value) when is_binary(value) do
+        case Integer.parse(value) do
+          {value, ""} -> value
+          _ -> nil
         end
       end
     end
