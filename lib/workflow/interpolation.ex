@@ -12,7 +12,10 @@ defmodule Workflow.Interpolation do
         output = 
           case Template.conditions_mapping(key) do
             :date -> 
-              human_readable_format(value, timezone)
+              case List.last(keys) do
+                "expires_date" -> human_readable_format_in_date(value, timezone)
+                _ -> human_readable_format_in_date_time(value, timezone)
+              end
             _ ->
               value
           end
@@ -22,11 +25,17 @@ defmodule Workflow.Interpolation do
     end)
   end
 
-  defp human_readable_format(date_time, timezone) do
+  defp human_readable_format_in_date_time(date_time, timezone) do
     date_time
     |> Calendar.DateTime.shift_zone!(timezone)
     |> Calendar.ContainsDateTime.dt_struct()
     |> Calendar.Strftime.strftime!("%I:%M %p %A, %d %b %Y")
+  end
+
+  defp human_readable_format_in_date(date_time, timezone) do
+    date_time
+    |> Calendar.DateTime.shift_zone!(timezone)
+    |> Calendar.DateTime.to_date()
   end
 end
 

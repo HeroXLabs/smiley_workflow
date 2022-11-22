@@ -7,22 +7,22 @@ defmodule Workflow.Template do
 
   defmodule ActionTemplate do
     @derive Jason.Encoder
-    @enforce_keys [:id, :title, :description, :type, :action]
-    defstruct [:id, :title, :description, :type, :action]
+    @enforce_keys [:id, :title, :description, :type, :action, :context]
+    defstruct [:id, :title, :description, :type, :action, :context]
   end
 
   @conditions_map %{
-      "phone_number" => :string,
-      "first_name" => :string,
-      "tags" => :selection,
-      "visits_count" => :number,
-      "last_visit_at" => :date,
-      "check_in.services" => :selection,
-      "appointment.start_at" => :date,
-      "appointment.services" => :selection,
-      "employees.phone_number" => :string,
-      "employees.first_name" => :string
-    }
+    "phone_number" => :string,
+    "first_name" => :string,
+    "tags" => :selection,
+    "visits_count" => :number,
+    "last_visit_at" => :date,
+    "check_in.services" => :selection,
+    "appointment.start_at" => :date,
+    "appointment.services" => :selection,
+    "employees.phone_number" => :string,
+    "employees.first_name" => :string
+  }
 
   def triggers() do
     [
@@ -54,7 +54,11 @@ defmodule Workflow.Template do
         context: %{
           "customer" => [
             %{id: "phone_number", name: "Customer phone number", category: "string"},
-            %{id: "masked_phone_number", name: "Masked customer phone number", category: "string"},
+            %{
+              id: "masked_phone_number",
+              name: "Masked customer phone number",
+              category: "string"
+            },
             %{id: "first_name", name: "Customer first name", category: "string"},
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
@@ -80,21 +84,38 @@ defmodule Workflow.Template do
         title: "Continue only if",
         description: "Continue only if the condition is met",
         type: "action",
-        action: "filter"
+        action: "filter",
+        context: %{}
       },
       %ActionTemplate{
         id: "step-delay",
         title: "Delay for",
         description: "Delay the workflow for a given amount of time",
         type: "action",
-        action: "delay"
+        action: "delay",
+        context: %{}
       },
       %ActionTemplate{
         id: "step-schedule-text",
         title: "Send a text message",
         description: "Send a text message to a customer",
         type: "action",
-        action: "send_sms"
+        action: "send_sms",
+        context: %{}
+      },
+      %ActionTemplate{
+        id: "step-schedule-coupon",
+        title: "Send a coupon",
+        description: "Send a coupon to a customer",
+        type: "action",
+        action: "send_coupon",
+        context: %{
+          "coupon" => [
+            %{id: "title", name: "Coupon title", category: "string"},
+            %{id: "link", name: "Coupon link", category: "string"},
+            %{id: "expire_date", name: "Coupon expire date", category: "date"}
+          ]
+        }
       }
     ]
   end

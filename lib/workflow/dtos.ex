@@ -127,6 +127,7 @@ defmodule Workflow.Dto do
     defp build_action(%Delay{}), do: "delay"
     defp build_action(%Delay.Incomplete{}), do: "delay"
     defp build_action(%Action.SendSms{}), do: "send_sms"
+    defp build_action(%Action.SendCoupon{}), do: "send_coupon"
     defp build_action(%Action.Incomplete{action: action}), do: to_string(action)
 
     defp build_context(%Trigger{} = trigger), do: trigger.context

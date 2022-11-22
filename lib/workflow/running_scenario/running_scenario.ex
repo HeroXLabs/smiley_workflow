@@ -485,11 +485,12 @@ defmodule Workflow.RunningScenario do
         context_repository,
         clock,
         scheduler,
-        sms_sender
+        sms_sender,
+        coupon_sender
       ) do
     with {:ok, context_payload} <-
            context_repository.find_context_payload(scenario_run.trigger_context),
-         {:ok, _} <- run_action(inline_action, context_payload, clock, sms_sender) do
+         {:ok, _} <- run_action(inline_action, context_payload, clock, sms_sender, coupon_sender) do
       scenario_run = %ScenarioRun{
         scenario_run
         | done_actions: [scenario_run.current_action | scenario_run.done_actions],
@@ -504,12 +505,32 @@ defmodule Workflow.RunningScenario do
         %InlineAction{filters: filters, action: action} = inline_action,
         context_payload,
         clock,
-        sms_sender
+        sms_sender,
+        coupon_sender
       ) do
     if run_context_filter(filters, context_payload, clock) do
       case action do
         %Action.SendSms{phone_number: to_phone, text: text} ->
           sms_sender.send_sms(to_phone, text, context_payload)
+
+          {:ok, inline_action}
+
+        %Action.SendCoupon{
+          phone_number: to_phone,
+          text: text,
+          coupon_title: coupon_title,
+          coupon_expires_in_days: coupon_expires_in_days
+        } ->
+          # Coupon sender will create the coupon, update the context payload
+          # and send the SMS with text interpoldated with coupon info, namely
+          # title, link, and expire_date
+          coupon_sender.send_coupon(
+            to_phone,
+            text,
+            coupon_title,
+            coupon_expires_in_days,
+            context_payload
+          )
 
           {:ok, inline_action}
 

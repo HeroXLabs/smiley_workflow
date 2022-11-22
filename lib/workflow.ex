@@ -180,7 +180,40 @@ defmodule Workflow do
       end
     end
 
-    @type t :: SendSms.t()
+    defmodule SendCoupon do
+      @enforce_keys [:phone_number, :text, :coupon_title, :coupon_expires_in_days]
+      defstruct [:phone_number, :text, :coupon_title, :coupon_expires_in_days]
+
+      @type t :: %__MODULE__{
+              phone_number: binary,
+              text: binary,
+              coupon_title: binary,
+              coupon_expires_in_days: pos_integer
+            }
+
+      def new(value) do
+        case value do
+          %{
+            "phone_number" => phone_number,
+            "text" => text,
+            "coupon_title" => coupon_title,
+            "coupon_expires_in_days" => coupon_expires_in_days
+          } ->
+            {:ok,
+             %__MODULE__{
+               phone_number: phone_number,
+               text: text,
+               coupon_title: coupon_title,
+               coupon_expires_in_days: coupon_expires_in_days
+             }}
+
+          _ ->
+            {:ok, %Incomplete{action: :send_coupon}}
+        end
+      end
+    end
+
+    @type t :: SendSms.t() | SendCoupon.t() | Incomplete.t()
 
     def from_json(%{"action" => action} = json) do
       new(action, json)
@@ -190,6 +223,10 @@ defmodule Workflow do
       SendSms.new(value)
     end
 
+    def new("send_coupon", value) do
+      SendCoupon.new(value)
+    end
+
     def new(action, _value) do
       {:error, "Invalid action: #{action}"}
     end
@@ -197,11 +234,29 @@ defmodule Workflow do
 
   defimpl Jason.Encoder, for: Action.SendSms do
     def encode(struct, opts) do
-      Jason.Encode.map(%{
-        "action" => "send_sms",
-        "phone_number" => struct.phone_number, 
-        "text" => struct.text
-      }, opts)
+      Jason.Encode.map(
+        %{
+          "action" => "send_sms",
+          "phone_number" => struct.phone_number,
+          "text" => struct.text
+        },
+        opts
+      )
+    end
+  end
+
+  defimpl Jason.Encoder, for: Action.SendCoupon do
+    def encode(struct, opts) do
+      Jason.Encode.map(
+        %{
+          "action" => "send_coupon",
+          "phone_number" => struct.phone_number,
+          "text" => struct.text,
+          "coupon_title" => struct.coupon_title,
+          "coupon_expires_in_days" => struct.coupon_expires_in_days
+        },
+        opts
+      )
     end
   end
 
@@ -219,12 +274,23 @@ defmodule Workflow do
             action: Action.t()
           }
 
-    def from_json(%{"filters" => filters, "delays" => delays, "inline_filters" => inline_filters, "action" => action}) do
+    def from_json(%{
+          "filters" => filters,
+          "delays" => delays,
+          "inline_filters" => inline_filters,
+          "action" => action
+        }) do
       with {:ok, filters} <- JsonUtil.from_json_array(filters, &Filter.from_json/1),
            {:ok, delays} <- JsonUtil.from_json_array(delays, &Delay.new/1),
            {:ok, inline_filters} <- JsonUtil.from_json_array(inline_filters, &Filter.from_json/1),
            {:ok, action} <- Action.from_json(action) do
-        {:ok, %__MODULE__{filters: filters, delays: delays, inline_filters: inline_filters, action: action}}
+        {:ok,
+         %__MODULE__{
+           filters: filters,
+           delays: delays,
+           inline_filters: inline_filters,
+           action: action
+         }}
       end
     end
   end
@@ -238,6 +304,7 @@ defmodule Workflow do
     @type t :: %__MODULE__{id: id, title: binary, description: binary, step: step}
 
     def is_action_step?(%__MODULE__{step: %Action.SendSms{}}), do: true
+    def is_action_step?(%__MODULE__{step: %Action.SendCoupon{}}), do: true
     def is_action_step?(_), do: false
 
     def is_trigger_step?(%__MODULE__{step: %Trigger{}}), do: true
@@ -495,13 +562,14 @@ defmodule Workflow do
     if Enum.any?(scenario.steps, &Step.is_incomplete_step?/1) do
       {:error, "Scenario is incomplete"}
     else
-      {:ok, %RunnableScenario{
-        id: scenario.id,
-        workspace_id: scenario.workspace_id,
-        title: scenario.title,
-        trigger: compile_trigger(scenario.trigger_id, scenario.steps),
-        actions: compile_actions(scenario.ordered_action_ids, scenario.steps)
-      }}
+      {:ok,
+       %RunnableScenario{
+         id: scenario.id,
+         workspace_id: scenario.workspace_id,
+         title: scenario.title,
+         trigger: compile_trigger(scenario.trigger_id, scenario.steps),
+         actions: compile_actions(scenario.ordered_action_ids, scenario.steps)
+       }}
     end
   end
 
