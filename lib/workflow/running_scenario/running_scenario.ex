@@ -320,6 +320,7 @@ defmodule Workflow.RunningScenario do
       %{
         "first_name" => customer.first_name,
         "phone_number" => customer.phone_number,
+        "masked_phone_number" => "******" <> String.slice(customer.phone_number, -4..-1),
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
         "last_visit_at" => customer.last_visit_at,
