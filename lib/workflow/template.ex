@@ -85,6 +85,7 @@ defmodule Workflow.Template do
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
           ],
           "appointment" => [
+            %{id: "start_at", name: "Appointment start at", category: "date"},
             %{id: "services", name: "Appointment services", category: "selection"},
             %{id: "employees", name: "Appointment assignees", category: "selection"}
           ],
