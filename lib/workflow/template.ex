@@ -88,7 +88,7 @@ defmodule Workflow.Template do
             %{id: "services", name: "Appointment services", category: "selection"},
             %{id: "employees", name: "Appointment assignees", category: "selection"}
           ],
-          "employee_id" => [
+          "employee_1" => [
             %{id: "phone_number", name: "Employee phone number", category: "string"},
             %{id: "first_name", name: "Employee first name", category: "string"}
           ]
