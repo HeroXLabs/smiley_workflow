@@ -1,6 +1,5 @@
 defmodule Workflow.RunningScenario do
   alias Workflow.{Trigger, Action, Filter, TypedConditions, Delay}
-  require Logger
 
   defmodule TriggerContext do
     defmodule CheckInContext do
@@ -495,7 +494,6 @@ defmodule Workflow.RunningScenario do
          {:ok, _} <- run_new_scenario(scenario_run, id_gen, clock, scheduler) do
     else
       {:error, err} -> 
-        Logger.error("Failed to start scenario: #{inspect(err)}")
         {:error, err}
     end
   end
