@@ -7,7 +7,9 @@ defmodule Workflow.Interpolation do
     |> Enum.reduce("", fn
       <<"{{" <> rest>>, acc ->
         key = String.trim_trailing(rest, "}")
-        keys = String.split(key, ".")
+        [first_key | rest ] = String.split(key, ".")
+        first_key = String.split(first_key, ":") |> List.last()
+        keys = [first_key] ++ rest
         value = get_in(bindings, keys)
         output = 
           case Template.conditions_mapping(key) do
