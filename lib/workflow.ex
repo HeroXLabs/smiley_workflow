@@ -181,14 +181,16 @@ defmodule Workflow do
     end
 
     defmodule SendCoupon do
-      @enforce_keys [:phone_number, :text, :coupon_title, :coupon_expires_in_days]
-      defstruct [:phone_number, :text, :coupon_title, :coupon_expires_in_days]
+      @enforce_keys [:phone_number, :text, :coupon_title, :coupon_description, :coupon_image_url, :coupon_expires_in_days]
+      defstruct [:phone_number, :text, :coupon_title, :coupon_description, :coupon_image_url, :coupon_expires_in_days]
 
       @type t :: %__MODULE__{
               phone_number: binary,
               text: binary,
               coupon_title: binary,
-              coupon_expires_in_days: pos_integer
+              coupon_expires_in_days: pos_integer,
+              coupon_description: binary | nil,
+              coupon_image_url: binary | nil
             }
 
       def new(value) do
@@ -204,7 +206,9 @@ defmodule Workflow do
                phone_number: phone_number,
                text: text,
                coupon_title: coupon_title,
-               coupon_expires_in_days: to_integer(coupon_expires_in_days)
+               coupon_expires_in_days: to_integer(coupon_expires_in_days),
+               coupon_description: Map.get(value, "coupon_description"),
+               coupon_image_url: Map.get(value, "coupon_image_url")
              }}
 
           _ ->
@@ -264,7 +268,9 @@ defmodule Workflow do
           "phone_number" => struct.phone_number,
           "text" => struct.text,
           "coupon_title" => struct.coupon_title,
-          "coupon_expires_in_days" => struct.coupon_expires_in_days
+          "coupon_expires_in_days" => struct.coupon_expires_in_days,
+          "coupon_description" => struct.coupon_description,
+          "coupon_image_url" => struct.coupon_image_url
         },
         opts
       )

@@ -9,5 +9,8 @@ defmodule Workflow.RunningScenario.CouponSender do
     end
   end
 
-  @callback send_coupon(String.t(), String.t(), String.t(), pos_integer, ConditionsPayload.t()) :: :ok
+  @type coupon_description :: String.t() | nil
+  @type coupon_image_url :: String.t() | nil
+
+  @callback send_coupon(String.t(), String.t(), String.t(), coupon_description, coupon_image_url, pos_integer, ConditionsPayload.t()) :: :ok
 end

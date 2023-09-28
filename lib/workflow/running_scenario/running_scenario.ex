@@ -609,6 +609,8 @@ defmodule Workflow.RunningScenario do
           phone_number: to_phone,
           text: text,
           coupon_title: coupon_title,
+          coupon_description: coupon_description,
+          coupon_image_url: coupon_image_url,
           coupon_expires_in_days: coupon_expires_in_days
         } ->
           # Coupon sender will create the coupon, update the context payload
@@ -618,6 +620,8 @@ defmodule Workflow.RunningScenario do
             to_phone,
             text,
             coupon_title,
+            coupon_description,
+            coupon_image_url,
             coupon_expires_in_days,
             context_payload
           )
