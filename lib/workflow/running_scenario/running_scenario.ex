@@ -71,6 +71,27 @@ defmodule Workflow.RunningScenario do
       end
     end
 
+    defmodule MissingCallContext do
+      @enforce_keys [:customer_id]
+      defstruct [:customer_id]
+
+      @type t :: %__MODULE__{
+              customer_id: integer
+            }
+
+      defimpl Jason.Encoder, for: __MODULE__ do
+        def encode(%{customer_id: customer_id}, opts) do
+          Jason.Encode.map(
+            %{
+              "type" => "missing_call",
+              "customer_id" => customer_id
+            },
+            opts
+          )
+        end
+      end
+    end
+
     @derive Jason.Encoder
     @enforce_keys [:workspace_id, :trigger_type, :context]
     defstruct [:workspace_id, :trigger_type, :context]
@@ -78,7 +99,11 @@ defmodule Workflow.RunningScenario do
     @type t :: %__MODULE__{
             workspace_id: binary,
             trigger_type: Trigger.TriggerType.t(),
-            context: CheckInContext.t() | CancelAppointmentContext.t()
+            context:
+              CheckInContext.t()
+              | CancelAppointmentContext.t()
+              | CheckOutContext.t()
+              | MissingCallContext.t()
           }
 
     def from_json(%{
@@ -126,6 +151,16 @@ defmodule Workflow.RunningScenario do
        %CancelAppointmentContext{
          customer_id: customer_id,
          appointment_id: appointment_id
+       }}
+    end
+
+    def context_from_json(%{
+          "type" => "missing_call",
+          "customer_id" => customer_id
+        }) do
+      {:ok,
+       %MissingCallContext{
+         customer_id: customer_id
        }}
     end
 
@@ -250,15 +285,47 @@ defmodule Workflow.RunningScenario do
             }
     end
 
+    defmodule MissingCallContextPayload do
+      @derive Jason.Encoder
+      @enforce_keys [:business, :customer]
+      defstruct [:business, :customer]
+
+      @type t :: %__MODULE__{
+              business: Business.t(),
+              customer: Customer.t()
+            }
+    end
+
     @type t ::
             CheckInContextPayload.t()
             | CheckOutContextPayload.t()
             | CancelAppointmentContextPayload.t()
+            | MissingCallContextPayload.t()
   end
 
   defprotocol ConditionsPayload do
     @spec to_conditions_payload(TriggerContextPayload.t()) :: map
     def to_conditions_payload(any)
+  end
+
+  defimpl ConditionsPayload, for: TriggerContextPayload.MissingCallContextPayload do
+    def to_conditions_payload(%TriggerContextPayload.MissingCallContextPayload{
+          business: business,
+          customer: customer
+        }) do
+      %{
+        "first_name" => customer.first_name,
+        "phone_number" => customer.phone_number,
+        "tags" => customer.tags,
+        "visits_count" => customer.visits_count,
+        "last_visit_at" => customer.last_visit_at,
+        "business" => %{
+          "id" => business.id,
+          "name" => business.name,
+          "timezone" => business.timezone
+        }
+      }
+    end
   end
 
   defimpl ConditionsPayload, for: TriggerContextPayload.CheckInContextPayload do
@@ -493,7 +560,7 @@ defmodule Workflow.RunningScenario do
          },
          {:ok, _} <- run_new_scenario(scenario_run, id_gen, clock, scheduler) do
     else
-      {:error, err} -> 
+      {:error, err} ->
         {:error, err}
     end
   end

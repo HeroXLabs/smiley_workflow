@@ -263,6 +263,95 @@ defmodule Workflow.RunningScenarioTest do
         Workflow.RunningScenario.Scheduler.Mock
       )
     end
+
+    test "starts a missing call scenario run" do
+      business = %TriggerContextPayload.Business{
+        id: "w123",
+        name: "My Business",
+        timezone: "America/New_York",
+        phone_number: "3216549870",
+        sms_provider: :twilio
+      }
+
+      customer = %TriggerContextPayload.Customer{
+        id: 1,
+        first_name: "John",
+        phone_number: "1234567890",
+        tags: [],
+        visits_count: 1,
+        last_visit_at: Calendar.DateTime.from_erl!({{2022, 1, 1}, {10,0,0}}, "America/New_York")
+      }
+
+      trigger_context = %TriggerContext{
+        workspace_id: "w123",
+        trigger_type: :cancel_appointment,
+        context: %TriggerContext.MissingCallContext{
+          customer_id: 1
+        }
+      }
+
+      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenario, fn _ ->
+        {:ok, runnable_scenario_3()}
+      end)
+
+      expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
+        {:ok, %TriggerContextPayload.MissingCallContextPayload{
+          customer: customer,
+          business: business
+        }}
+      end)
+
+      expect(Workflow.RunningScenario.Clock.Mock, :today!, fn _ ->
+        Date.from_iso8601!("2020-01-01")
+      end)
+
+      expect(Workflow.RunningScenario.IdGen.Mock, :generate, fn ->
+        "123"
+      end)
+
+      expect(Workflow.RunningScenario.Scheduler.Mock, :schedule, fn scenario_run, seconds, _clock ->
+        assert scenario_run.current_action
+        assert Enum.count(scenario_run.pending_actions) == 0
+        assert seconds == 86400
+
+        {:ok, expected} = ScenarioRun.from_json(Jason.decode!(Jason.encode!(scenario_run)))
+        assert expected == scenario_run
+
+        RunningScenario.run_action(
+          scenario_run,
+          Workflow.RunningScenario.ContextPayloadRepository.Mock,
+          Workflow.RunningScenario.Clock.Mock,
+          Workflow.RunningScenario.Scheduler.Mock,
+          Workflow.RunningScenario.SMSSender.Mock,
+          Workflow.RunningScenario.CouponSender.Mock
+        )
+        :ok
+      end)
+
+      expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
+        {:ok, %TriggerContextPayload.MissingCallContextPayload{
+          customer: customer,
+          business: business
+        }}
+      end)
+
+      expect(Workflow.RunningScenario.Clock.Mock, :today!, fn _ ->
+        Date.from_iso8601!("2020-01-01")
+      end)
+
+      expect(Workflow.RunningScenario.SMSSender.Mock, :send_sms, fn _to, _text, _context_payload ->
+        :ok
+      end)
+
+      RunningScenario.start_scenario(
+        trigger_context,
+        Workflow.RunningScenario.ScenarioRepository.Mock,
+        Workflow.RunningScenario.ContextPayloadRepository.Mock,
+        Workflow.RunningScenario.IdGen.Mock,
+        Workflow.RunningScenario.Clock.Mock,
+        Workflow.RunningScenario.Scheduler.Mock
+      )
+    end
   end
 
   test "interpolation" do
@@ -384,6 +473,26 @@ defmodule Workflow.RunningScenarioTest do
       id: "s123",
       title: "Cancel Appointment Scenario",
       trigger: %Workflow.Trigger{type: :cancel_appointment},
+      workspace_id: "w123"
+    }
+  end
+
+  defp runnable_scenario_3() do
+    %Workflow.RunnableScenario{
+      actions: [
+        %Workflow.RunnableAction{
+          filters: [],
+          delays: [%Workflow.Delay{delay_unit: :days, delay_value: 1}],
+          inline_filters: [],
+          action: %Workflow.Action.SendSms{
+            phone_number: "{{phone_number}}",
+            text: "Someones missed a call."
+          }
+        }
+      ],
+      id: "s123",
+      title: "Missing Call Scenario",
+      trigger: %Workflow.Trigger{type: :missing_call},
       workspace_id: "w123"
     }
   end

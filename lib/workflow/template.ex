@@ -103,6 +103,22 @@ defmodule Workflow.Template do
             %{id: "first_name", name: "Employee first name", category: "string"}
           ]
         }
+      },
+      %TriggerTemplate{
+        id: "step-missing-call",
+        title: "After a missed call",
+        description: "Trigger when a user's call is missed",
+        type: "trigger",
+        trigger: "missing_call",
+        context: %{
+          "customer" => [
+            %{id: "phone_number", name: "Customer phone number", category: "string"},
+            %{id: "first_name", name: "Customer first name", category: "string"},
+            %{id: "tags", name: "Customer tags", category: "array"},
+            %{id: "visits_count", name: "Number of visits", category: "number"},
+            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+          ]
+        }
       }
     ]
   end
