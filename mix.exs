@@ -26,6 +26,7 @@ defmodule Workflow.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       {:jason, "~> 1.2"},
       {:monad, github: "he9lin/monad", ref: "93370c1"},
+      {:ssl_verify_fun, "1.1.7"},
       {:mox, "~> 1.0.2", only: :test}
     ]
   end
