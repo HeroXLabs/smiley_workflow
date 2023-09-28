@@ -22,7 +22,7 @@ defmodule Workflow.Template do
     "appointment.services" => :selection,
     "employees.phone_number" => :string,
     "employees.first_name" => :string,
-    "coupon.expires_date" => :date
+    "coupon.expire_date" => :date
   }
 
   def triggers() do
