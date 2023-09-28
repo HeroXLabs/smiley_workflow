@@ -15,7 +15,7 @@ defmodule Workflow.Interpolation do
           case Template.conditions_mapping(key) do
             :date -> 
               case List.last(keys) do
-                "expires_date" -> human_readable_format_in_date(value, timezone)
+                "expire_date" -> human_readable_format_in_date(value, timezone)
                 _ -> human_readable_format_in_date_time(value, timezone)
               end
             :string ->
