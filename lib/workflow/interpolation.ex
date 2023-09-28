@@ -11,6 +11,7 @@ defmodule Workflow.Interpolation do
         first_key = String.split(first_key, ":") |> List.last()
         keys = [first_key] ++ rest
         value = get_in(bindings, keys)
+        key = Enum.join(keys, ".")
         output = 
           case Template.conditions_mapping(key) do
             :date -> 
