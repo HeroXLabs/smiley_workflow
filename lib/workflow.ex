@@ -23,15 +23,15 @@ defmodule Workflow do
       def value(type), do: to_string(type)
     end
 
-    @enforce_keys [:type, :context]
-    defstruct [:type, :context]
+    @enforce_keys [:type]
+    defstruct [:type]
 
-    @type t :: %__MODULE__{type: TriggerType.t(), context: map}
+    @type t :: %__MODULE__{type: TriggerType.t()}
 
     # Context should be valid as it's from the default templates
-    def new(type, context) do
+    def new(type) do
       with {:ok, type} <- TriggerType.new(type) do
-        {:ok, %__MODULE__{type: type, context: context}}
+        {:ok, %__MODULE__{type: type}}
       end
     end
   end
@@ -314,7 +314,7 @@ defmodule Workflow do
 
   defmodule Step do
     @enforce_keys [:id, :scenario_id, :title, :description, :step]
-    defstruct [:id, :scenario_id, :title, :description, :step]
+    defstruct [:id, :scenario_id, :title, :description, :step, context: %{}]
 
     @type id :: binary
     @type step :: Trigger.t() | Filter.t() | Delay.t() | Action.t()
@@ -570,7 +570,7 @@ defmodule Workflow do
       trigger: nil,
       action: step_template.action,
       value: nil,
-      context: nil
+      context: step_template.context
     }
   end
 

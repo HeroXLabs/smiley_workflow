@@ -49,7 +49,6 @@ defmodule WorkflowTest do
             id: "step-1",
             scenario_id: "123",
             step: %Workflow.Trigger{
-              context: %{},
               type: :check_in
             },
             title: "Check In"
@@ -149,7 +148,7 @@ defmodule WorkflowTest do
         ],
         id: "123",
         title: "New Scenario",
-        trigger: %Workflow.Trigger{context: %{}, type: :check_in},
+        trigger: %Workflow.Trigger{type: :check_in},
         workspace_id: "abc"
       }
 
@@ -168,7 +167,6 @@ defmodule WorkflowTest do
             id: "step-1",
             scenario_id: "123",
             step: %Workflow.Trigger{
-              context: %{},
               type: :check_in
             },
             title: "Check In"

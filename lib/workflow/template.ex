@@ -41,6 +41,9 @@ defmodule Workflow.Template do
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
           ],
+          "business" => [
+            %{id: "name", name: "Business name", category: "string"},
+          ],
           "check_in" => [
             %{id: "services", name: "Check-in services", category: "selection"}
           ]
@@ -59,6 +62,9 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
+          ],
+          "business" => [
+            %{id: "name", name: "Business name", category: "string"},
           ],
           "check_in" => [
             %{id: "services", name: "Check-in services", category: "selection"}
@@ -83,6 +89,9 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
+          ],
+          "business" => [
+            %{id: "name", name: "Business name", category: "string"},
           ],
           "appointment" => [
             %{id: "start_at", name: "Appointment start at", category: "date"},

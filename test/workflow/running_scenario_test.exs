@@ -363,7 +363,7 @@ defmodule Workflow.RunningScenarioTest do
       ],
       id: "s123",
       title: "Check In Scenario",
-      trigger: %Workflow.Trigger{context: %{}, type: :check_in},
+      trigger: %Workflow.Trigger{type: :check_in},
       workspace_id: "w123"
     }
   end
@@ -383,7 +383,7 @@ defmodule Workflow.RunningScenarioTest do
       ],
       id: "s123",
       title: "Cancel Appointment Scenario",
-      trigger: %Workflow.Trigger{context: %{}, type: :cancel_appointment},
+      trigger: %Workflow.Trigger{type: :cancel_appointment},
       workspace_id: "w123"
     }
   end

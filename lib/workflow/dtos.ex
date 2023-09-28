@@ -96,6 +96,7 @@ defmodule Workflow.Dto do
            scenario_id: step_dto.scenario_id,
            title: step_dto.title,
            description: step_dto.description,
+           context: step_dto.context,
            step: step
          }}
       end
@@ -110,7 +111,7 @@ defmodule Workflow.Dto do
         type: build_type(step.step),
         trigger: build_trigger(step.step),
         action: build_action(step.step),
-        context: build_context(step.step),
+        context: step.context,
         value: build_value(step.step)
       }
     end
@@ -130,9 +131,6 @@ defmodule Workflow.Dto do
     defp build_action(%Action.SendCoupon{}), do: "send_coupon"
     defp build_action(%Action.Incomplete{action: action}), do: to_string(action)
 
-    defp build_context(%Trigger{} = trigger), do: trigger.context
-    defp build_context(_), do: nil
-
     defp build_value(%Trigger{}), do: nil
     defp build_value(%Filter{} = filter), do: %{"conditions" => filter.raw_conditions}
 
@@ -141,8 +139,8 @@ defmodule Workflow.Dto do
 
     defp build_value(step), do: Map.from_struct(step)
 
-    defp build_step(%__MODULE__{type: "trigger", trigger: trigger, context: context}) do
-      Trigger.new(trigger, context)
+    defp build_step(%__MODULE__{type: "trigger", trigger: trigger}) do
+      Trigger.new(trigger)
     end
 
     defp build_step(%__MODULE__{type: "action", action: "delay", value: value}) do
