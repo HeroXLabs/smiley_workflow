@@ -564,6 +564,8 @@ defmodule Workflow.RunningScenario do
 
         # Schedule run_action
         scheduler.schedule(updated_scenario_run, delays_in_seconds, clock)
+
+        {:ok, updated_scenario_run}
       else
         {:error, "Failed to pass context filter"}
       end
@@ -605,24 +607,12 @@ defmodule Workflow.RunningScenario do
 
           {:ok, inline_action}
 
-        %Action.SendCoupon{
-          phone_number: to_phone,
-          text: text,
-          coupon_title: coupon_title,
-          coupon_description: coupon_description,
-          coupon_image_url: coupon_image_url,
-          coupon_expires_in_days: coupon_expires_in_days
-        } ->
+        %Action.SendCoupon{} = coupon_action ->
           # Coupon sender will create the coupon, update the context payload
           # and send the SMS with text interpoldated with coupon info, namely
           # title, link, and expire_date
           coupon_sender.send_coupon(
-            to_phone,
-            text,
-            coupon_title,
-            coupon_description,
-            coupon_image_url,
-            coupon_expires_in_days,
+            coupon_action,
             context_payload
           )
 

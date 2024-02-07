@@ -1,5 +1,6 @@
 defmodule Workflow.RunningScenario.CouponSender do
   alias Workflow.RunningScenario.ConditionsPayload
+  alias Workflow.Action.SendCoupon
 
   defmodule SMSProvider do
     @type t :: :twilio | :telnyx
@@ -12,5 +13,5 @@ defmodule Workflow.RunningScenario.CouponSender do
   @type coupon_description :: String.t() | nil
   @type coupon_image_url :: String.t() | nil
 
-  @callback send_coupon(String.t(), String.t(), String.t(), coupon_description, coupon_image_url, pos_integer, ConditionsPayload.t()) :: :ok
+  @callback send_coupon(SendCoupon.t(), ConditionsPayload.t()) :: :ok
 end

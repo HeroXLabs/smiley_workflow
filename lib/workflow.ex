@@ -181,8 +181,8 @@ defmodule Workflow do
     end
 
     defmodule SendCoupon do
-      @enforce_keys [:phone_number, :text, :coupon_title, :coupon_description, :coupon_image_url, :coupon_expires_in_days]
-      defstruct [:phone_number, :text, :coupon_title, :coupon_description, :coupon_image_url, :coupon_expires_in_days]
+      @enforce_keys [:phone_number, :text, :coupon_title, :coupon_description, :coupon_image_url, :coupon_redeemable_count, :coupon_expires_in_days]
+      defstruct [:phone_number, :text, :coupon_title, :coupon_description, :coupon_image_url, :coupon_redeemable_count, :coupon_expires_in_days]
 
       @type t :: %__MODULE__{
               phone_number: binary,
@@ -190,6 +190,7 @@ defmodule Workflow do
               coupon_title: binary,
               coupon_expires_in_days: pos_integer,
               coupon_description: binary | nil,
+              coupon_redeemable_count: pos_integer,
               coupon_image_url: binary | nil
             }
 
@@ -208,7 +209,8 @@ defmodule Workflow do
                coupon_title: coupon_title,
                coupon_expires_in_days: to_integer(coupon_expires_in_days),
                coupon_description: Map.get(value, "coupon_description"),
-               coupon_image_url: Map.get(value, "coupon_image_url")
+               coupon_image_url: Map.get(value, "coupon_image_url"),
+               coupon_redeemable_count: Map.get(value, "coupon_redeemable_count", 1) |> to_integer()
              }}
 
           _ ->
