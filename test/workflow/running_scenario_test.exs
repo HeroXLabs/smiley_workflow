@@ -220,7 +220,7 @@ defmodule Workflow.RunningScenarioTest do
 
       expect(Workflow.RunningScenario.Scheduler.Mock, :schedule, fn scenario_run, seconds, _clock ->
         assert scenario_run.current_action
-        assert Enum.count(scenario_run.pending_actions) == 0
+        assert scenario_run.pending_actions == []
         assert seconds == 86400
 
         {:ok, expected} = ScenarioRun.from_json(Jason.decode!(Jason.encode!(scenario_run)))
@@ -251,6 +251,103 @@ defmodule Workflow.RunningScenarioTest do
       end)
 
       expect(Workflow.RunningScenario.SMSSender.Mock, :send_sms, fn _to, _text, _context_payload ->
+        :ok
+      end)
+
+      RunningScenario.start_scenario(
+        trigger_context,
+        Workflow.RunningScenario.ScenarioRepository.Mock,
+        Workflow.RunningScenario.ContextPayloadRepository.Mock,
+        Workflow.RunningScenario.IdGen.Mock,
+        Workflow.RunningScenario.Clock.Mock,
+        Workflow.RunningScenario.Scheduler.Mock
+      )
+    end
+
+    test "starts a check in with send coupon scenario run" do
+      business = %TriggerContextPayload.Business{
+        id: "w123",
+        name: "My Business",
+        timezone: "America/New_York",
+        phone_number: "3216549870",
+        sms_provider: :twilio
+      }
+
+      customer = %TriggerContextPayload.Customer{
+        id: 1,
+        first_name: "John",
+        phone_number: "1234567890",
+        tags: [],
+        visits_count: 1,
+        last_visit_at: "2020-01-01T00:00:00Z"
+      }
+
+      check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
+        id: "c123",
+        services: [1, 2]
+      }
+
+      trigger_context = %TriggerContext{
+        workspace_id: "w123",
+        trigger_type: :check_in,
+        context: %TriggerContext.CheckInContext{
+          customer_id: 1,
+          check_in_id: "c123"
+        }
+      }
+
+      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenario, fn _ ->
+        {:ok, runnable_scenario_3()}
+      end)
+
+      expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
+        {:ok, %TriggerContextPayload.CheckInContextPayload{
+          customer: customer,
+          check_in: check_in,
+          business: business
+        }}
+      end)
+
+      expect(Workflow.RunningScenario.Clock.Mock, :today!, fn _ ->
+        Date.from_iso8601!("2020-01-01")
+      end)
+
+      expect(Workflow.RunningScenario.IdGen.Mock, :generate, fn ->
+        "123"
+      end)
+
+      expect(Workflow.RunningScenario.Scheduler.Mock, :schedule, fn scenario_run, seconds, _clock ->
+        assert scenario_run.current_action
+        assert scenario_run.pending_actions == []
+        assert seconds == 3600
+
+        {:ok, expected} = ScenarioRun.from_json(Jason.decode!(Jason.encode!(scenario_run)))
+        assert expected == scenario_run
+
+        RunningScenario.run_action(
+          scenario_run,
+          Workflow.RunningScenario.ContextPayloadRepository.Mock,
+          Workflow.RunningScenario.Clock.Mock,
+          Workflow.RunningScenario.Scheduler.Mock,
+          Workflow.RunningScenario.SMSSender.Mock,
+          Workflow.RunningScenario.CouponSender.Mock
+        )
+        :ok
+      end)
+
+      expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
+        {:ok, %TriggerContextPayload.CheckInContextPayload{
+          customer: %{ customer | tags: ["vip"] },
+          check_in: check_in,
+          business: business
+        }}
+      end)
+
+      expect(Workflow.RunningScenario.Clock.Mock, :today!, fn _ ->
+        Date.from_iso8601!("2020-01-01")
+      end)
+
+      expect(Workflow.RunningScenario.CouponSender.Mock, :send_coupon, fn _coupon, _payload ->
         :ok
       end)
 
@@ -384,6 +481,34 @@ defmodule Workflow.RunningScenarioTest do
       id: "s123",
       title: "Cancel Appointment Scenario",
       trigger: %Workflow.Trigger{type: :cancel_appointment},
+      workspace_id: "w123"
+    }
+  end
+
+  defp runnable_scenario_3() do
+    %Workflow.RunnableScenario{
+      actions: [
+        %Workflow.RunnableAction{
+          filters: [],
+          delays: [
+            %Workflow.Delay{delay_unit: :hours, delay_value: 1}
+          ],
+          inline_filters: [],
+          action: %Workflow.Action.SendCoupon{
+            phone_number: "123-456-7890",
+            text: "Here is your coupon!",
+            new_customer_only: false,
+            coupon_title: "Coupon Title",
+            coupon_description: "Coupon Description",
+            coupon_redeemable_count: 1,
+            coupon_image_url: "https://example.com/coupon.png",
+            coupon_expires_in_days: 30
+          }
+        }
+      ],
+      id: "s123",
+      title: "Check In Scenario",
+      trigger: %Workflow.Trigger{type: :check_in},
       workspace_id: "w123"
     }
   end

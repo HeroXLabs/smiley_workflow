@@ -187,6 +187,7 @@ defmodule Workflow do
       @type t :: %__MODULE__{
               phone_number: binary,
               text: binary,
+              new_customer_only: boolean,
               coupon_title: binary,
               coupon_expires_in_days: pos_integer,
               coupon_description: binary | nil,
