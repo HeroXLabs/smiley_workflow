@@ -274,6 +274,8 @@ defmodule Workflow do
           "coupon_title" => struct.coupon_title,
           "coupon_expires_in_days" => struct.coupon_expires_in_days,
           "coupon_description" => struct.coupon_description,
+          "new_customer_only" => struct.new_customer_only,
+          "coupon_redeemable_count" => struct.coupon_redeemable_count,
           "coupon_image_url" => struct.coupon_image_url
         },
         opts
