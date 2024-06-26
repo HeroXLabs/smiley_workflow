@@ -29,7 +29,7 @@ defmodule Workflow.RunningScenarioTest do
         phone_number: "1234567890",
         tags: [],
         visits_count: 1,
-        last_visit_at: "2020-01-01T00:00:00Z"
+        last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}})
       }
 
       check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
@@ -172,7 +172,7 @@ defmodule Workflow.RunningScenarioTest do
         phone_number: "1234567890",
         tags: [],
         visits_count: 1,
-        last_visit_at: Calendar.DateTime.from_erl!({{2022, 1, 1}, {10,0,0}}, "America/New_York")
+        last_visit_at: from_erl!({{2022, 1, 1}, {10,0,0}})
       }
 
       appointment = %TriggerContextPayload.CancelAppointmentContextPayload.Appointment{
@@ -279,7 +279,7 @@ defmodule Workflow.RunningScenarioTest do
         phone_number: "1234567890",
         tags: [],
         visits_count: 1,
-        last_visit_at: "2020-01-01T00:00:00Z"
+        last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}})
       }
 
       check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
@@ -511,5 +511,9 @@ defmodule Workflow.RunningScenarioTest do
       trigger: %Workflow.Trigger{type: :check_in},
       workspace_id: "w123"
     }
+  end
+
+  defp from_erl!(erl, timezone \\ "America/New_York") do
+    Calendar.DateTime.from_erl!(erl, timezone)
   end
 end
