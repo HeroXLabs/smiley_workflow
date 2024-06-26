@@ -272,7 +272,7 @@ defmodule Workflow.RunningScenario do
         "phone_number" => customer.phone_number,
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
-        "last_visit_at" => customer.last_visit_at,
+        "last_visit_at" => DateTime.to_unix(customer.last_visit_at),
         "business" => %{
           "id" => business.id,
           "name" => business.name,
@@ -296,7 +296,7 @@ defmodule Workflow.RunningScenario do
         "phone_number" => customer.phone_number,
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
-        "last_visit_at" => customer.last_visit_at,
+        "last_visit_at" => DateTime.to_unix(customer.last_visit_at),
         "business" => %{
           "id" => business.id,
           "name" => business.name,
@@ -322,7 +322,7 @@ defmodule Workflow.RunningScenario do
         "masked_phone_number" => "******" <> String.slice(customer.phone_number, -4..-1),
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
-        "last_visit_at" => customer.last_visit_at,
+        "last_visit_at" => DateTime.to_unix(customer.last_visit_at),
         "business" => %{
           "id" => business.id,
           "name" => business.name,
