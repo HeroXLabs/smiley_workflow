@@ -46,8 +46,8 @@ defmodule Workflow.RunningScenarioTest do
         }
       }
 
-      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenario, fn _ ->
-        {:ok, runnable_scenario()}
+      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenarios, fn _ ->
+        {:ok, [runnable_scenario()]}
       end)
 
       expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
@@ -197,8 +197,8 @@ defmodule Workflow.RunningScenarioTest do
         }
       }
 
-      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenario, fn _ ->
-        {:ok, runnable_scenario_2()}
+      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenarios, fn _ ->
+        {:ok, [runnable_scenario_2()]}
       end)
 
       expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->
@@ -296,8 +296,8 @@ defmodule Workflow.RunningScenarioTest do
         }
       }
 
-      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenario, fn _ ->
-        {:ok, runnable_scenario_3()}
+      expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenarios, fn _ ->
+        {:ok, [runnable_scenario_3()]}
       end)
 
       expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, fn _ ->

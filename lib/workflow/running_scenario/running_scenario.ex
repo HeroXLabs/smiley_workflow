@@ -482,19 +482,20 @@ defmodule Workflow.RunningScenario do
         clock,
         scheduler
       ) do
-    with {:ok, runnable_scenario} <- scenario_repository.find_runnable_scenario(trigger_context),
-         {:ok, context_payload} <- context_repository.find_context_payload(trigger_context),
-         scenario_run <- %NewScenarioRun{
-           scenario_id: runnable_scenario.id,
-           workspace_id: trigger_context.workspace_id,
-           trigger_context: trigger_context,
-           context_payload: context_payload,
-           actions: runnable_scenario.actions
-         },
-         {:ok, _} <- run_new_scenario(scenario_run, id_gen, clock, scheduler) do
-    else
-      {:error, err} -> 
-        {:error, err}
+    with {:ok, runnable_scenarios} <-
+           scenario_repository.find_runnable_scenarios(trigger_context),
+         {:ok, context_payload} <- context_repository.find_context_payload(trigger_context) do
+      runnable_scenarios
+      |> Enum.each(fn runnable_scenario ->
+        %NewScenarioRun{
+          scenario_id: runnable_scenario.id,
+          workspace_id: trigger_context.workspace_id,
+          trigger_context: trigger_context,
+          context_payload: context_payload,
+          actions: runnable_scenario.actions
+        }
+        |> run_new_scenario(id_gen, clock, scheduler)
+      end)
     end
   end
 
