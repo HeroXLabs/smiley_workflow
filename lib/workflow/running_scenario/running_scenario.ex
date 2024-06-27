@@ -1,5 +1,6 @@
 defmodule Workflow.RunningScenario do
   alias Workflow.{Trigger, Action, Filter, TypedConditions, Delay}
+  require Logger
 
   defmodule TriggerContext do
     defmodule CheckInContext do
@@ -487,14 +488,22 @@ defmodule Workflow.RunningScenario do
          {:ok, context_payload} <- context_repository.find_context_payload(trigger_context) do
       runnable_scenarios
       |> Enum.each(fn runnable_scenario ->
-        %NewScenarioRun{
-          scenario_id: runnable_scenario.id,
-          workspace_id: trigger_context.workspace_id,
-          trigger_context: trigger_context,
-          context_payload: context_payload,
-          actions: runnable_scenario.actions
-        }
-        |> run_new_scenario(id_gen, clock, scheduler)
+        try do
+          run = %NewScenarioRun{
+            scenario_id: runnable_scenario.id,
+            workspace_id: trigger_context.workspace_id,
+            trigger_context: trigger_context,
+            context_payload: context_payload,
+            actions: runnable_scenario.actions
+          }
+
+          run_new_scenario(run, id_gen, clock, scheduler)
+        rescue
+          err ->
+            Logger.error(
+              "Failed to run scenario with trigger_context #{inspect(trigger_context)}: #{inspect(err)}"
+            )
+        end
       end)
     end
   end
