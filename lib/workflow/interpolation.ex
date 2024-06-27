@@ -33,7 +33,13 @@ defmodule Workflow.Interpolation do
     end)
   end
 
-  defp human_readable_format_in_date_time(date_time, timezone) do
+  defp human_readable_format_in_date_time(unix_date_time, timezone) when is_integer(unix_date_time) do
+    unix_date_time
+    |> Calendar.DateTime.Parse.unix!()
+    |> human_readable_format_in_date_time(timezone)
+  end
+
+  defp human_readable_format_in_date_time(%DateTime{} = date_time, timezone) do
     date_time
     |> Calendar.DateTime.shift_zone!(timezone)
     |> Calendar.ContainsDateTime.dt_struct()
