@@ -1,5 +1,5 @@
 defmodule Workflow.RunningScenario.CouponSender do
-  alias Workflow.RunningScenario.ConditionsPayload
+  alias Workflow.RunningScenario.TriggerContextPayload
   alias Workflow.Action.SendCoupon
 
   defmodule SMSProvider do
@@ -13,5 +13,5 @@ defmodule Workflow.RunningScenario.CouponSender do
   @type coupon_description :: String.t() | nil
   @type coupon_image_url :: String.t() | nil
 
-  @callback send_coupon(SendCoupon.t(), ConditionsPayload.t()) :: :ok
+  @callback send_coupon(SendCoupon.t(), TriggerContextPayload.t()) :: :ok
 end

@@ -1,5 +1,5 @@
 defmodule Workflow.RunningScenario.SMSSender do
-  alias Workflow.RunningScenario.ConditionsPayload
+  alias Workflow.RunningScenario.TriggerContextPayload
 
   defmodule SMSProvider do
     @type t :: :twilio | :telnyx
@@ -9,5 +9,5 @@ defmodule Workflow.RunningScenario.SMSSender do
     end
   end
 
-  @callback send_sms(String.t(), String.t(), ConditionsPayload.t()) :: :ok
+  @callback send_sms(String.t(), String.t(), TriggerContextPayload.t()) :: :ok
 end

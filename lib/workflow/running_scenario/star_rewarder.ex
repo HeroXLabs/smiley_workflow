@@ -1,7 +1,7 @@
 defmodule Workflow.RunningScenario.StarRewarder do
-  alias Workflow.RunningScenario.ConditionsPayload
+  alias Workflow.RunningScenario.TriggerContextPayload
   alias Workflow.Action.RewardStar
 
-  @callback reward_star(RewardStar.t(), ConditionsPayload.t()) :: :ok
+  @callback reward_star(RewardStar.t(), TriggerContextPayload.t()) :: :ok
 end
 
