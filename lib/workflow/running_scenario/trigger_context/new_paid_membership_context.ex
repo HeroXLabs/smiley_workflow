@@ -4,6 +4,7 @@ defmodule Workflow.RunningScenario.TriggerContext.NewPaidMembershipContext do
 
   @type t :: %__MODULE__{
           customer_id: integer,
+          membership_id: integer,
           membership_plan_id: String.t()
         }
 

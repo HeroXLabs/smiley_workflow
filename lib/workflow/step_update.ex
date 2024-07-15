@@ -119,6 +119,9 @@ defmodule Workflow.StepUpdate do
 
       %Step{step: %Action.Incomplete{action: :send_coupon}} ->
         UpdateAction.new("send_coupon", value)
+
+      %Step{step: %Action.Incomplete{action: :reward_star}} ->
+        UpdateAction.new("reward_star", value)
     end
   end
 end
