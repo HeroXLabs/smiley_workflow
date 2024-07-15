@@ -42,7 +42,7 @@ defmodule Workflow.Template do
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
           ],
           "business" => [
-            %{id: "name", name: "Business name", category: "string"},
+            %{id: "name", name: "Business name", category: "string"}
           ],
           "check_in" => [
             %{id: "services", name: "Check-in services", category: "selection"}
@@ -64,7 +64,7 @@ defmodule Workflow.Template do
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
           ],
           "business" => [
-            %{id: "name", name: "Business name", category: "string"},
+            %{id: "name", name: "Business name", category: "string"}
           ],
           "check_in" => [
             %{id: "services", name: "Check-in services", category: "selection"}
@@ -91,7 +91,7 @@ defmodule Workflow.Template do
             %{id: "last_visit_at", name: "Last visit date", category: "date"}
           ],
           "business" => [
-            %{id: "name", name: "Business name", category: "string"},
+            %{id: "name", name: "Business name", category: "string"}
           ],
           "appointment" => [
             %{id: "start_at", name: "Appointment start at", category: "date"},
@@ -101,6 +101,36 @@ defmodule Workflow.Template do
           "employee_1" => [
             %{id: "phone_number", name: "Employee phone number", category: "string"},
             %{id: "first_name", name: "Employee first name", category: "string"}
+          ]
+        }
+      },
+      %TriggerTemplate{
+        id: "step-new-paid-membership",
+        title: "New paid membership",
+        description: "Trigger when a new paid membership is created",
+        type: "trigger",
+        trigger: "new_paid_membership",
+        context: %{
+          "customer" => [
+            %{id: "phone_number", name: "Customer phone number", category: "string"},
+            %{
+              id: "masked_phone_number",
+              name: "Masked customer phone number",
+              category: "string"
+            },
+            %{id: "first_name", name: "Customer first name", category: "string"},
+            %{id: "tags", name: "Customer tags", category: "array"},
+            %{id: "visits_count", name: "Number of visits", category: "number"},
+            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+          ],
+          "business" => [
+            %{id: "name", name: "Business name", category: "string"}
+          ],
+          "membership" => [
+            %{id: "id", name: "Membership ID", category: "string"},
+            %{id: "title", name: "Membership title", category: "string"},
+            %{id: "price", name: "Membership price", category: "number"},
+            %{id: "plan_frequency", name: "Membership plan type", category: "string"}
           ]
         }
       }
@@ -146,6 +176,14 @@ defmodule Workflow.Template do
             %{id: "expire_date", name: "Coupon expire date", category: "date"}
           ]
         }
+      },
+      %ActionTemplate{
+        id: "step-reward-star",
+        title: "Reward star balance",
+        description: "Reward stars to a customer",
+        type: "action",
+        action: "reward_star",
+        context: %{}
       }
     ]
   end

@@ -105,6 +105,9 @@ defmodule Workflow.StepUpdate do
       %Step{step: %Action.SendCoupon{}} ->
         UpdateAction.new("send_coupon", value)
 
+      %Step{step: %Action.RewardStar{}} ->
+        UpdateAction.new("reward_star", value)
+
       %Step{step: %Filter.Incomplete{}} ->
         UpdateFilter.new(value)
 

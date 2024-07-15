@@ -4,12 +4,22 @@ defmodule Workflow.RunningScenario.TriggerContext do
   defstruct [:workspace_id, :trigger_type, :context]
 
   alias Workflow.Trigger.TriggerType
-  alias __MODULE__.{CheckInContext, CheckOutContext, CancelAppointmentContext}
+
+  alias __MODULE__.{
+    CheckInContext,
+    CheckOutContext,
+    CancelAppointmentContext,
+    NewPaidMembershipContext
+  }
 
   @type t :: %__MODULE__{
           workspace_id: binary,
           trigger_type: TriggerType.t(),
-          context: CheckInContext.t() | CheckOutContext.t() | CancelAppointmentContext.t()
+          context:
+            CheckInContext.t()
+            | CheckOutContext.t()
+            | CancelAppointmentContext.t()
+            | NewPaidMembershipContext.t()
         }
 
   def from_json(%{
@@ -56,6 +66,20 @@ defmodule Workflow.RunningScenario.TriggerContext do
      %CancelAppointmentContext{
        customer_id: customer_id,
        appointment_id: appointment_id
+     }}
+  end
+
+  defp context_from_json(%{
+         "type" => "new_paid_membership",
+         "customer_id" => customer_id,
+         "membership_id" => membership_id,
+         "membership_plan_id" => membership_plan_id
+       }) do
+    {:ok,
+     %NewPaidMembershipContext{
+       customer_id: customer_id,
+       membership_id: membership_id,
+       membership_plan_id: membership_plan_id
      }}
   end
 
