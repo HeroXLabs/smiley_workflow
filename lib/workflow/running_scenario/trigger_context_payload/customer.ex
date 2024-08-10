@@ -9,6 +9,6 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.Customer do
           phone_number: String.t(),
           tags: list(String.t()),
           visits_count: integer,
-          last_visit_at: DateTime.t()
+          last_visit_at: DateTime.t() | nil
         }
 end

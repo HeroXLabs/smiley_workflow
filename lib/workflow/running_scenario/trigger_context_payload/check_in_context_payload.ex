@@ -1,5 +1,6 @@
 defmodule Workflow.RunningScenario.TriggerContextPayload.CheckInContextPayload do
   alias Workflow.RunningScenario.TriggerContextPayload.{Business, Customer}
+  alias Workflow.Dates
 
   defmodule CheckIn do
     @derive Jason.Encoder
@@ -35,7 +36,7 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.CheckInContextPayload d
         "phone_number" => customer.phone_number,
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
-        "last_visit_at" => DateTime.to_unix(customer.last_visit_at),
+        "last_visit_at" => Dates.to_datetime_unix_optional(customer.last_visit_at),
         "business" => %{
           "id" => business.id,
           "name" => business.name,

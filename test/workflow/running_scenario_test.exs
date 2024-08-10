@@ -13,6 +13,10 @@ defmodule Workflow.RunningScenarioTest do
 
   setup :verify_on_exit!
 
+  test "Filter with invalid input" do
+    {:error, _} = Filter.new(%{"conditions" => "last_visit_at:#{nil}"})
+  end
+
   describe ".start_scenario" do
     test "starts a check in scenario run" do
       business = %TriggerContextPayload.Business{

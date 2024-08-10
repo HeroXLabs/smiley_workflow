@@ -98,6 +98,12 @@ defmodule Workflow.Dates do
     end
   end
 
+  def to_datetime_unix_optional(%DateTime{} = dt) do
+    DateTime.to_unix(dt)
+  end
+
+  def to_datetime_unix_optional(_), do: nil
+
   def within_dates?(date, start_date, end_date) do
     diff(date, start_date) >= 0 &&
       diff(date, end_date) <= 0

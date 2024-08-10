@@ -1,5 +1,6 @@
 defmodule Workflow.RunningScenario.TriggerContextPayload.CancelAppointmentContextPayload do
   alias Workflow.RunningScenario.TriggerContextPayload.{Business, Customer}
+  alias Workflow.Dates
 
   defmodule Employee do
     @derive Jason.Encoder
@@ -52,7 +53,7 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.CancelAppointmentContex
         "masked_phone_number" => "******" <> String.slice(customer.phone_number, -4..-1),
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
-        "last_visit_at" => DateTime.to_unix(customer.last_visit_at),
+        "last_visit_at" => Dates.to_datetime_unix_optional(customer.last_visit_at),
         "business" => %{
           "id" => business.id,
           "name" => business.name,
