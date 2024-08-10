@@ -680,7 +680,7 @@ defmodule Workflow.RunningScenarioTest do
           delays: [%Workflow.Delay{delay_unit: :hours, delay_value: 2}],
           inline_filters: [],
           action: %Workflow.Action.RewardStar{
-            points: 100
+            reward_points: 100
           }
         }
       ],
