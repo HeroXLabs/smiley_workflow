@@ -18,6 +18,8 @@ defmodule Workflow.Template do
     "visits_count" => :number,
     "last_visit_at" => :date,
     "check_in.services" => :selection,
+    "check_out.services" => :selection,
+    "check_out.stars_earned" => :number,
     "appointment.start_at" => :date,
     "appointment.services" => :selection,
     "employees.phone_number" => :string,
