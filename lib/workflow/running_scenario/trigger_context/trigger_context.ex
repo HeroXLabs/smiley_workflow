@@ -49,13 +49,11 @@ defmodule Workflow.RunningScenario.TriggerContext do
          "type" => "check_out",
          "customer_id" => customer_id,
          "check_out_id" => check_out_id
-       } = json) do
-    stars_earned = Map.get(json, "stars_earned", 0)
+       }) do
     {:ok,
      %CheckOutContext{
        customer_id: customer_id,
-       check_out_id: check_out_id,
-       stars_earned: stars_earned
+       check_out_id: check_out_id
      }}
   end
 
