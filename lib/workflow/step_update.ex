@@ -5,11 +5,13 @@ defmodule Workflow.StepUpdate do
   defmodule ReplaceStep do
     @enforce_keys [:step, :template_step_id]
     defstruct [:step, :template_step_id]
+    @type t :: %__MODULE__{step: Step.t(), template_step_id: term}
   end
 
   defmodule UpdateStep do
     @enforce_keys [:step, :update]
     defstruct [:step, :update]
+    @type t :: %__MODULE__{step: Step.t(), update: term}
   end
 
   @type t :: ReplaceStep.t() | UpdateStep.t()

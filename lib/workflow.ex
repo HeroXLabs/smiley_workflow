@@ -214,7 +214,6 @@ defmodule Workflow do
     end
   end
 
-  @spec compile_trigger(Trigger.trigger(), [Step.t()]) :: Trigger.t()
   defp compile_trigger(trigger_id, steps) do
     steps
     |> Enum.find(&(&1.id == trigger_id))

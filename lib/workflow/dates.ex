@@ -8,14 +8,14 @@ defmodule Workflow.Dates do
     Calendar.Date.today!(timezone)
   end
 
-  @spec n_days_since(Integer.t(), timezone) :: Date.t()
+  @spec n_days_since(pos_integer(), timezone) :: Date.t()
   def n_days_since(num, timezone) do
     timezone
     |> Calendar.Date.today!()
     |> Calendar.Date.add!(num)
   end
 
-  @spec n_days_ago(Integer.t(), timezone) :: Date.t()
+  @spec n_days_ago(pos_integer(), timezone) :: Date.t()
   def n_days_ago(num, timezone) do
     timezone
     |> Calendar.Date.today!()

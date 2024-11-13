@@ -10,6 +10,6 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.Business do
           name: String.t(),
           timezone: String.t(),
           phone_number: String.t(),
-          sms_provider: SMSSender.sms_provider()
+          sms_provider: SMSSender.SMSProvider.t()
         }
 end
