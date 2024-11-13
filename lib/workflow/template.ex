@@ -71,6 +71,7 @@ defmodule Workflow.Template do
           ],
           "check_out" => [
             %{id: "services", name: "Check-in services", category: "selection"},
+            %{id: "service_categories", name: "Check-in service categories", category: "selection"},
             %{id: "stars_earned", name: "Points earned", category: "number"}
           ]
         }

@@ -46,6 +46,7 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.CheckOutContextPayload 
         },
         "check_out" => %{
           "services" => check_out.services,
+          "service_categories" => check_out.service_categories,
           "stars_earned" => check_out.stars_earned
         }
       }
