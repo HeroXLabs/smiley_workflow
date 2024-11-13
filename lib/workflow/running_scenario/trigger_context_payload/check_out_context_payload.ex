@@ -4,12 +4,13 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.CheckOutContextPayload 
 
   defmodule CheckOut do
     @derive Jason.Encoder
-    @enforce_keys [:id, :services, :stars_earned]
-    defstruct [:id, :services, :stars_earned]
+    @enforce_keys [:id, :services, :service_categories, :stars_earned]
+    defstruct [:id, :services, :service_categories, :stars_earned]
 
     @type t :: %__MODULE__{
             id: String.t(),
             services: list(integer),
+            service_categories: list(String.t()),
             stars_earned: integer
           }
   end
@@ -45,6 +46,7 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.CheckOutContextPayload 
         },
         "check_out" => %{
           "services" => check_out.services,
+          "service_categories" => check_out.service_categories,
           "stars_earned" => check_out.stars_earned
         }
       }

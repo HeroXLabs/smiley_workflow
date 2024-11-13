@@ -1,7 +1,7 @@
 defmodule Workflow.TypedConditions do
   alias Workflow.Dates
 
-  @type operator :: Op.t
+  @type operator :: term
 
   @type field_type :: :string
                     | :number

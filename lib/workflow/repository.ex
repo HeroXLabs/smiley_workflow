@@ -1,12 +1,6 @@
 defmodule Workflow.Repository do
-  alias Workflow.Dto.{ScenarioDto, NewScenarioDto, NewStepDto}
-  alias Workflow.Step
-
-  defmodule ValidationError do
-    defexception [:message]
-  end
-
-  @type error :: :not_found | ValidationError.t()
+  alias Workflow.Dto.{ScenarioDto, NewScenarioDto, NewStepDto, StepDto}
+  alias Workflow.{Scenario, Step}
 
   @callback create_new_scenario(NewScenarioDto.t()) :: {:ok, ScenarioDto.t()} | {:error, any()}
   @callback create_step(Scenario.id(), NewStepDto.t()) :: {:ok, StepDto.t()} | {:error, any()}
