@@ -33,7 +33,8 @@ defmodule Workflow.RunningScenarioTest do
         phone_number: "1234567890",
         tags: [],
         visits_count: 1,
-        last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}})
+        last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}}),
+        has_upcoming_appointments: false
       }
 
       check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
@@ -206,7 +207,8 @@ defmodule Workflow.RunningScenarioTest do
         phone_number: "1234567890",
         tags: [],
         visits_count: 1,
-        last_visit_at: from_erl!({{2022, 1, 1}, {10, 0, 0}})
+        last_visit_at: from_erl!({{2022, 1, 1}, {10, 0, 0}}),
+        has_upcoming_appointments: false
       }
 
       appointment = %TriggerContextPayload.CancelAppointmentContextPayload.Appointment{
@@ -329,7 +331,8 @@ defmodule Workflow.RunningScenarioTest do
         phone_number: "1234567890",
         tags: [],
         visits_count: 1,
-        last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}})
+        last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}}),
+        has_upcoming_appointments: false
       }
 
       check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
@@ -441,7 +444,8 @@ defmodule Workflow.RunningScenarioTest do
       phone_number: "1234567890",
       tags: [],
       visits_count: 1,
-      last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}})
+      last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}}),
+      has_upcoming_appointments: false
     }
 
     membership = %TriggerContextPayload.NewPaidMembershipContextPayload.Membership{
@@ -465,14 +469,19 @@ defmodule Workflow.RunningScenarioTest do
       {:ok, [runnable_scenario_4()]}
     end)
 
-    expect(Workflow.RunningScenario.ContextPayloadRepository.Mock, :find_context_payload, 2, fn _ ->
-      {:ok,
-       %TriggerContextPayload.NewPaidMembershipContextPayload{
-         customer: customer,
-         business: business,
-         membership: membership
-       }}
-    end)
+    expect(
+      Workflow.RunningScenario.ContextPayloadRepository.Mock,
+      :find_context_payload,
+      2,
+      fn _ ->
+        {:ok,
+         %TriggerContextPayload.NewPaidMembershipContextPayload{
+           customer: customer,
+           business: business,
+           membership: membership
+         }}
+      end
+    )
 
     expect(Workflow.RunningScenario.Clock.Mock, :today!, 2, fn _ ->
       Date.from_iso8601!("2020-01-01")
@@ -503,7 +512,8 @@ defmodule Workflow.RunningScenarioTest do
       :ok
     end)
 
-    expect(Workflow.RunningScenario.StarRewarder.Mock, :reward_star, fn _action, _context_payload ->
+    expect(Workflow.RunningScenario.StarRewarder.Mock, :reward_star, fn _action,
+                                                                        _context_payload ->
       :ok
     end)
 
