@@ -25,7 +25,8 @@ defmodule Workflow.Template do
     "appointment.services" => :selection,
     "employees.phone_number" => :string,
     "employees.first_name" => :string,
-    "coupon.expire_date" => :date
+    "coupon.expire_date" => :date,
+    "has_upcoming_appointments" => :boolean
   }
 
   def triggers() do
@@ -42,7 +43,12 @@ defmodule Workflow.Template do
             %{id: "first_name", name: "Customer first name", category: "string"},
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
-            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+            %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{
+              id: "has_upcoming_appointments",
+              name: "Has upcoming appointments",
+              category: "boolean"
+            }
           ],
           "business" => [
             %{id: "name", name: "Business name", category: "string"}
@@ -64,14 +70,23 @@ defmodule Workflow.Template do
             %{id: "first_name", name: "Customer first name", category: "string"},
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
-            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+            %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{
+              id: "has_upcoming_appointments",
+              name: "Has upcoming appointments",
+              category: "boolean"
+            }
           ],
           "business" => [
             %{id: "name", name: "Business name", category: "string"}
           ],
           "check_out" => [
             %{id: "services", name: "Check-in services", category: "selection"},
-            %{id: "service_categories", name: "Check-in service categories", category: "selection"},
+            %{
+              id: "service_categories",
+              name: "Check-in service categories",
+              category: "selection"
+            },
             %{id: "stars_earned", name: "Points earned", category: "number"}
           ]
         }
@@ -93,7 +108,12 @@ defmodule Workflow.Template do
             %{id: "first_name", name: "Customer first name", category: "string"},
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
-            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+            %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{
+              id: "has_upcoming_appointments",
+              name: "Has upcoming appointments",
+              category: "boolean"
+            }
           ],
           "business" => [
             %{id: "name", name: "Business name", category: "string"}
@@ -126,7 +146,12 @@ defmodule Workflow.Template do
             %{id: "first_name", name: "Customer first name", category: "string"},
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
-            %{id: "last_visit_at", name: "Last visit date", category: "date"}
+            %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{
+              id: "has_upcoming_appointments",
+              name: "Has upcoming appointments",
+              category: "boolean"
+            }
           ],
           "business" => [
             %{id: "name", name: "Business name", category: "string"}

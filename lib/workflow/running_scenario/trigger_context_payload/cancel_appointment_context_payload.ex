@@ -54,6 +54,7 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.CancelAppointmentContex
         "tags" => customer.tags,
         "visits_count" => customer.visits_count,
         "last_visit_at" => Dates.to_datetime_unix_optional(customer.last_visit_at),
+        "has_upcoming_appointments" => customer.has_upcoming_appointments,
         "business" => %{
           "id" => business.id,
           "name" => business.name,
