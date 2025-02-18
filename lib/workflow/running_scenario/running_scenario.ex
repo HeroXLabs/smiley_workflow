@@ -123,7 +123,15 @@ defmodule Workflow.RunningScenario do
       ) do
     with {:ok, context_payload} <-
            context_repository.find_context_payload(scenario_run.trigger_context),
-         {:ok, _} <- run_action(inline_action, context_payload, clock, sms_sender, coupon_sender, star_rewarder) do
+         {:ok, _} <-
+           run_action(
+             inline_action,
+             context_payload,
+             clock,
+             sms_sender,
+             coupon_sender,
+             star_rewarder
+           ) do
       scenario_run = %ScenarioRun{
         scenario_run
         | done_actions: [scenario_run.current_action | scenario_run.done_actions],

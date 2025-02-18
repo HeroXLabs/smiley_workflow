@@ -17,6 +17,20 @@ defmodule Workflow.RunningScenarioTest do
     {:error, _} = Filter.new(%{"conditions" => "last_visit_at:#{nil}"})
   end
 
+  test "Filter with has_upcoming_appointments" do
+    {:ok, filter} = Filter.new(%{"conditions" => "has_upcoming_appointments:!!"})
+
+    assert filter.conditions ==
+             {{:boolean, "has_upcoming_appointments"}, {{:equal, :boolean}, true}}
+  end
+
+  test "Filter with no has_upcoming_appointments" do
+    {:ok, filter} = Filter.new(%{"conditions" => "has_upcoming_appointments:!:"})
+
+    assert filter.conditions ==
+             {{:boolean, "has_upcoming_appointments"}, {{:not_equal, :boolean}, true}}
+  end
+
   describe ".start_scenario" do
     test "starts a check in scenario run" do
       business = %TriggerContextPayload.Business{
