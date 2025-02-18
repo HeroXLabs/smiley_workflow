@@ -25,7 +25,7 @@ defmodule Workflow.RunningScenarioTest do
   end
 
   test "Filter with no has_upcoming_appointments" do
-    {:ok, filter} = Filter.new(%{"conditions" => "has_upcoming_appointments:!:"})
+    {:ok, filter} = Filter.new(%{"conditions" => "has_upcoming_appointments:!"})
 
     assert filter.conditions ==
              {{:boolean, "has_upcoming_appointments"}, {{:not_equal, :boolean}, true}}
