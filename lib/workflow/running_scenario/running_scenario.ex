@@ -174,11 +174,15 @@ defmodule Workflow.RunningScenario do
             context_payload
           )
 
+          {:ok, inline_action}
+
         %Action.AddStamp{} = action ->
           stamp_rewarder.add_stamp(
             action,
             context_payload
           )
+
+          {:ok, inline_action}
 
         _ ->
           {:error, "Unsupported action"}
