@@ -119,7 +119,8 @@ defmodule Workflow.RunningScenario do
         scheduler,
         sms_sender,
         coupon_sender,
-        star_rewarder
+        star_rewarder,
+        stamp_rewarder
       ) do
     with {:ok, context_payload} <-
            context_repository.find_context_payload(scenario_run.trigger_context),
@@ -130,7 +131,8 @@ defmodule Workflow.RunningScenario do
              clock,
              sms_sender,
              coupon_sender,
-             star_rewarder
+             star_rewarder,
+             stamp_rewarder
            ) do
       scenario_run = %ScenarioRun{
         scenario_run
@@ -148,7 +150,8 @@ defmodule Workflow.RunningScenario do
         clock,
         sms_sender,
         coupon_sender,
-        star_rewarder
+        star_rewarder,
+        stamp_rewarder
       ) do
     if run_context_filter(filters, context_payload, clock) do
       case action do
@@ -158,9 +161,6 @@ defmodule Workflow.RunningScenario do
           {:ok, inline_action}
 
         %Action.SendCoupon{} = coupon_action ->
-          # Coupon sender will create the coupon, update the context payload
-          # and send the SMS with text interpoldated with coupon info, namely
-          # title, link, and expire_date
           coupon_sender.send_coupon(
             coupon_action,
             context_payload
@@ -170,6 +170,12 @@ defmodule Workflow.RunningScenario do
 
         %Action.RewardStar{} = action ->
           star_rewarder.reward_star(
+            action,
+            context_payload
+          )
+
+        %Action.AddStamp{} = action ->
+          stamp_rewarder.add_stamp(
             action,
             context_payload
           )

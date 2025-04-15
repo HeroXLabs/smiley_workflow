@@ -7,5 +7,6 @@ Mox.defmock(Workflow.RunningScenario.Scheduler.Mock, for: Workflow.RunningScenar
 Mox.defmock(Workflow.RunningScenario.SMSSender.Mock, for: Workflow.RunningScenario.SMSSender)
 Mox.defmock(Workflow.RunningScenario.CouponSender.Mock, for: Workflow.RunningScenario.CouponSender)
 Mox.defmock(Workflow.RunningScenario.StarRewarder.Mock, for: Workflow.RunningScenario.StarRewarder)
+Mox.defmock(Workflow.RunningScenario.StampRewarder.Mock, for: Workflow.RunningScenario.StampRewarder)
 
 ExUnit.start()

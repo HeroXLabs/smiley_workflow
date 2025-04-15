@@ -214,6 +214,14 @@ defmodule Workflow.Template do
         type: "action",
         action: "reward_star",
         context: %{}
+      },
+      %ActionTemplate{
+        id: "step-add-stamp",
+        title: "Add stamp",
+        description: "Add stamps to a customer",
+        type: "action",
+        action: "add_stamp",
+        context: %{}
       }
     ]
   end

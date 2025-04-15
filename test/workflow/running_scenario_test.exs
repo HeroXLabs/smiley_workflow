@@ -107,7 +107,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.Scheduler.Mock,
           Workflow.RunningScenario.SMSSender.Mock,
           Workflow.RunningScenario.CouponSender.Mock,
-          Workflow.RunningScenario.StarRewarder.Mock
+          Workflow.RunningScenario.StarRewarder.Mock,
+          Workflow.RunningScenario.StampRewarder.Mock
         )
 
         :ok
@@ -188,7 +189,8 @@ defmodule Workflow.RunningScenarioTest do
             Workflow.RunningScenario.Scheduler.Mock,
             Workflow.RunningScenario.SMSSender.Mock,
             Workflow.RunningScenario.CouponSender.Mock,
-            Workflow.RunningScenario.StarRewarder.Mock
+            Workflow.RunningScenario.StarRewarder.Mock,
+            Workflow.RunningScenario.StampRewarder.Mock
           )
 
         assert error == "Failed to pass context filter"
@@ -290,7 +292,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.Scheduler.Mock,
           Workflow.RunningScenario.SMSSender.Mock,
           Workflow.RunningScenario.CouponSender.Mock,
-          Workflow.RunningScenario.StarRewarder.Mock
+          Workflow.RunningScenario.StarRewarder.Mock,
+          Workflow.RunningScenario.StampRewarder.Mock
         )
 
         :ok
@@ -405,7 +408,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.Scheduler.Mock,
           Workflow.RunningScenario.SMSSender.Mock,
           Workflow.RunningScenario.CouponSender.Mock,
-          Workflow.RunningScenario.StarRewarder.Mock
+          Workflow.RunningScenario.StarRewarder.Mock,
+          Workflow.RunningScenario.StampRewarder.Mock
         )
 
         :ok
@@ -520,7 +524,8 @@ defmodule Workflow.RunningScenarioTest do
         Workflow.RunningScenario.Scheduler.Mock,
         Workflow.RunningScenario.SMSSender.Mock,
         Workflow.RunningScenario.CouponSender.Mock,
-        Workflow.RunningScenario.StarRewarder.Mock
+        Workflow.RunningScenario.StarRewarder.Mock,
+        Workflow.RunningScenario.StampRewarder.Mock
       )
 
       :ok
