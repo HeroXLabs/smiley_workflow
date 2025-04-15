@@ -75,6 +75,7 @@ defmodule Workflow.StepUpdate do
       case Action.new(action_name, value) do
         {:ok, action} ->
           {:ok, %__MODULE__{action: action, value: value}}
+
         _ ->
           {:error, "Invalid action value"}
       end
@@ -109,6 +110,9 @@ defmodule Workflow.StepUpdate do
 
       %Step{step: %Action.RewardStar{}} ->
         UpdateAction.new("reward_star", value)
+
+      %Step{step: %Action.AddStamp{}} ->
+        UpdateAction.new("add_stamp", value)
 
       %Step{step: %Filter.Incomplete{}} ->
         UpdateFilter.new(value)

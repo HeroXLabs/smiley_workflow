@@ -546,6 +546,102 @@ defmodule Workflow.RunningScenarioTest do
     )
   end
 
+  test "starts an add stamp scenario run" do
+    business = %TriggerContextPayload.Business{
+      id: "w123",
+      name: "My Business",
+      timezone: "America/New_York",
+      phone_number: "3216549870",
+      sms_provider: :twilio
+    }
+
+    customer = %TriggerContextPayload.Customer{
+      id: 1,
+      first_name: "John",
+      phone_number: "1234567890",
+      tags: [],
+      visits_count: 1,
+      last_visit_at: from_erl!({{2020, 1, 1}, {0, 0, 0}}),
+      has_upcoming_appointments: false
+    }
+
+    check_in = %TriggerContextPayload.CheckInContextPayload.CheckIn{
+      id: "c123",
+      services: [1, 2]
+    }
+
+    trigger_context = %TriggerContext{
+      workspace_id: "w123",
+      trigger_type: :check_in,
+      context: %TriggerContext.CheckInContext{
+        customer_id: 1,
+        check_in_id: "c123"
+      }
+    }
+
+    expect(Workflow.RunningScenario.ScenarioRepository.Mock, :find_runnable_scenarios, fn _ ->
+      {:ok, [runnable_scenario_5()]}
+    end)
+
+    expect(
+      Workflow.RunningScenario.ContextPayloadRepository.Mock,
+      :find_context_payload,
+      2,
+      fn _ ->
+        {:ok,
+         %TriggerContextPayload.CheckInContextPayload{
+           customer: customer,
+           check_in: check_in,
+           business: business
+         }}
+      end
+    )
+
+    expect(Workflow.RunningScenario.Clock.Mock, :today!, 2, fn _ ->
+      Date.from_iso8601!("2020-01-01")
+    end)
+
+    expect(Workflow.RunningScenario.IdGen.Mock, :generate, fn ->
+      "123"
+    end)
+
+    expect(Workflow.RunningScenario.Scheduler.Mock, :schedule, fn scenario_run, seconds, _clock ->
+      assert scenario_run.current_action
+      assert Enum.count(scenario_run.pending_actions) == 0
+      assert seconds == 7200
+
+      {:ok, expected} = ScenarioRun.from_json(Jason.decode!(Jason.encode!(scenario_run)))
+      assert expected == scenario_run
+
+      RunningScenario.run_action(
+        scenario_run,
+        Workflow.RunningScenario.ContextPayloadRepository.Mock,
+        Workflow.RunningScenario.Clock.Mock,
+        Workflow.RunningScenario.Scheduler.Mock,
+        Workflow.RunningScenario.SMSSender.Mock,
+        Workflow.RunningScenario.CouponSender.Mock,
+        Workflow.RunningScenario.StarRewarder.Mock,
+        Workflow.RunningScenario.StampRewarder.Mock
+      )
+
+      :ok
+    end)
+
+    expect(Workflow.RunningScenario.StampRewarder.Mock, :add_stamp, fn _action,
+                                                                       _context_payload ->
+      :ok
+    end)
+
+    RunningScenario.start_scenario(
+      trigger_context,
+      Workflow.RunningScenario.ScenarioRepository.Mock,
+      Workflow.RunningScenario.ContextPayloadRepository.Mock,
+      Workflow.RunningScenario.IdGen.Mock,
+      Workflow.RunningScenario.Clock.Mock,
+      Workflow.RunningScenario.Scheduler.Mock
+    )
+  end
+
   test "interpolation" do
     timezone = "America/Los_Angeles"
     datetime = Calendar.DateTime.from_erl!({{2022, 1, 1}, {10, 0, 0}}, timezone)
@@ -720,6 +816,30 @@ defmodule Workflow.RunningScenarioTest do
       id: "s123",
       title: "New Paid Membership Scenario",
       trigger: %Workflow.Trigger{type: :new_paid_membership},
+      workspace_id: "w123"
+    }
+  end
+
+  defp runnable_scenario_5() do
+    %Workflow.RunnableScenario{
+      actions: [
+        %Workflow.RunnableAction{
+          filters: [
+            %Workflow.Filter{
+              conditions: {{:number, "visits_count"}, {{:equal, :number}, 1}},
+              raw_conditions: "visits_count:=:1"
+            }
+          ],
+          delays: [%Workflow.Delay{delay_unit: :hours, delay_value: 2}],
+          inline_filters: [],
+          action: %Workflow.Action.AddStamp{
+            stamp_count: 1
+          }
+        }
+      ],
+      id: "s123",
+      title: "Check In Add Stamp Scenario",
+      trigger: %Workflow.Trigger{type: :check_in},
       workspace_id: "w123"
     }
   end
