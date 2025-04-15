@@ -128,6 +128,9 @@ defmodule Workflow.StepUpdate do
 
       %Step{step: %Action.Incomplete{action: :reward_star}} ->
         UpdateAction.new("reward_star", value)
+
+      %Step{step: %Action.Incomplete{action: :add_stamp}} ->
+        UpdateAction.new("add_stamp", value)
     end
   end
 end
