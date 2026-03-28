@@ -1,7 +1,18 @@
 defmodule Workflow.Trigger do
   defmodule TriggerType do
-    @valid_types [:check_in, :check_out, :cancel_appointment, :new_paid_membership]
-    @type t :: :check_in | :check_out | :cancel_appointment | :new_paid_membership
+    @valid_types [
+      :check_in,
+      :check_out,
+      :cancel_appointment,
+      :new_paid_membership,
+      :form_response_created
+    ]
+    @type t ::
+            :check_in
+            | :check_out
+            | :cancel_appointment
+            | :new_paid_membership
+            | :form_response_created
 
     def new(raw_type) do
       type = String.to_atom(raw_type)

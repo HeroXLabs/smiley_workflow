@@ -9,7 +9,8 @@ defmodule Workflow.RunningScenario.TriggerContext do
     CheckInContext,
     CheckOutContext,
     CancelAppointmentContext,
-    NewPaidMembershipContext
+    NewPaidMembershipContext,
+    FormResponseContext
   }
 
   @type t :: %__MODULE__{
@@ -20,6 +21,7 @@ defmodule Workflow.RunningScenario.TriggerContext do
             | CheckOutContext.t()
             | CancelAppointmentContext.t()
             | NewPaidMembershipContext.t()
+            | FormResponseContext.t()
         }
 
   def from_json(%{
@@ -80,6 +82,18 @@ defmodule Workflow.RunningScenario.TriggerContext do
        customer_id: customer_id,
        membership_id: membership_id,
        membership_plan_id: membership_plan_id
+     }}
+  end
+
+  defp context_from_json(%{
+         "type" => "form_response_created",
+         "customer_id" => customer_id,
+         "response_id" => response_id
+       }) do
+    {:ok,
+     %FormResponseContext{
+       customer_id: customer_id,
+       response_id: response_id
      }}
   end
 

@@ -1,12 +1,32 @@
 Mox.defmock(Workflow.Repository.Mock, for: Workflow.Repository)
-Mox.defmock(Workflow.RunningScenario.ScenarioRepository.Mock, for: Workflow.RunningScenario.ScenarioRepository)
-Mox.defmock(Workflow.RunningScenario.ContextPayloadRepository.Mock, for: Workflow.RunningScenario.ContextPayloadRepository)
+
+Mox.defmock(Workflow.RunningScenario.ScenarioRepository.Mock,
+  for: Workflow.RunningScenario.ScenarioRepository
+)
+
+Mox.defmock(Workflow.RunningScenario.ContextPayloadRepository.Mock,
+  for: Workflow.RunningScenario.ContextPayloadRepository
+)
+
 Mox.defmock(Workflow.RunningScenario.IdGen.Mock, for: Workflow.RunningScenario.IdGen)
 Mox.defmock(Workflow.RunningScenario.Clock.Mock, for: Workflow.RunningScenario.Clock)
 Mox.defmock(Workflow.RunningScenario.Scheduler.Mock, for: Workflow.RunningScenario.Scheduler)
 Mox.defmock(Workflow.RunningScenario.SMSSender.Mock, for: Workflow.RunningScenario.SMSSender)
-Mox.defmock(Workflow.RunningScenario.CouponSender.Mock, for: Workflow.RunningScenario.CouponSender)
-Mox.defmock(Workflow.RunningScenario.StarRewarder.Mock, for: Workflow.RunningScenario.StarRewarder)
-Mox.defmock(Workflow.RunningScenario.StampRewarder.Mock, for: Workflow.RunningScenario.StampRewarder)
+
+Mox.defmock(Workflow.RunningScenario.CouponSender.Mock,
+  for: Workflow.RunningScenario.CouponSender
+)
+
+Mox.defmock(Workflow.RunningScenario.StarRewarder.Mock,
+  for: Workflow.RunningScenario.StarRewarder
+)
+
+Mox.defmock(Workflow.RunningScenario.StampRewarder.Mock,
+  for: Workflow.RunningScenario.StampRewarder
+)
+
+Mox.defmock(Workflow.RunningScenario.WebhookSender.Mock,
+  for: Workflow.RunningScenario.WebhookSender
+)
 
 ExUnit.start()

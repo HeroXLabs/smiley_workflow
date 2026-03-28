@@ -108,7 +108,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.SMSSender.Mock,
           Workflow.RunningScenario.CouponSender.Mock,
           Workflow.RunningScenario.StarRewarder.Mock,
-          Workflow.RunningScenario.StampRewarder.Mock
+          Workflow.RunningScenario.StampRewarder.Mock,
+          Workflow.RunningScenario.WebhookSender.Mock
         )
 
         :ok
@@ -190,7 +191,8 @@ defmodule Workflow.RunningScenarioTest do
             Workflow.RunningScenario.SMSSender.Mock,
             Workflow.RunningScenario.CouponSender.Mock,
             Workflow.RunningScenario.StarRewarder.Mock,
-            Workflow.RunningScenario.StampRewarder.Mock
+            Workflow.RunningScenario.StampRewarder.Mock,
+            Workflow.RunningScenario.WebhookSender.Mock
           )
 
         assert error == "Failed to pass context filter"
@@ -293,7 +295,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.SMSSender.Mock,
           Workflow.RunningScenario.CouponSender.Mock,
           Workflow.RunningScenario.StarRewarder.Mock,
-          Workflow.RunningScenario.StampRewarder.Mock
+          Workflow.RunningScenario.StampRewarder.Mock,
+          Workflow.RunningScenario.WebhookSender.Mock
         )
 
         :ok
@@ -409,7 +412,8 @@ defmodule Workflow.RunningScenarioTest do
           Workflow.RunningScenario.SMSSender.Mock,
           Workflow.RunningScenario.CouponSender.Mock,
           Workflow.RunningScenario.StarRewarder.Mock,
-          Workflow.RunningScenario.StampRewarder.Mock
+          Workflow.RunningScenario.StampRewarder.Mock,
+          Workflow.RunningScenario.WebhookSender.Mock
         )
 
         :ok
@@ -525,7 +529,8 @@ defmodule Workflow.RunningScenarioTest do
         Workflow.RunningScenario.SMSSender.Mock,
         Workflow.RunningScenario.CouponSender.Mock,
         Workflow.RunningScenario.StarRewarder.Mock,
-        Workflow.RunningScenario.StampRewarder.Mock
+        Workflow.RunningScenario.StampRewarder.Mock,
+        Workflow.RunningScenario.WebhookSender.Mock
       )
 
       :ok
@@ -621,7 +626,8 @@ defmodule Workflow.RunningScenarioTest do
         Workflow.RunningScenario.SMSSender.Mock,
         Workflow.RunningScenario.CouponSender.Mock,
         Workflow.RunningScenario.StarRewarder.Mock,
-        Workflow.RunningScenario.StampRewarder.Mock
+        Workflow.RunningScenario.StampRewarder.Mock,
+        Workflow.RunningScenario.WebhookSender.Mock
       )
 
       :ok

@@ -131,6 +131,7 @@ defmodule Workflow.Dto do
     defp build_action(%Action.SendCoupon{}), do: "send_coupon"
     defp build_action(%Action.RewardStar{}), do: "reward_star"
     defp build_action(%Action.AddStamp{}), do: "add_stamp"
+    defp build_action(%Action.OutgoingWebhook{}), do: "outgoing_webhook"
     defp build_action(%Action.Incomplete{action: action}), do: to_string(action)
 
     defp build_value(%Trigger{}), do: nil

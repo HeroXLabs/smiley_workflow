@@ -120,7 +120,8 @@ defmodule Workflow.RunningScenario do
         sms_sender,
         coupon_sender,
         star_rewarder,
-        stamp_rewarder
+        stamp_rewarder,
+        webhook_sender
       ) do
     with {:ok, context_payload} <-
            context_repository.find_context_payload(scenario_run.trigger_context),
@@ -132,7 +133,8 @@ defmodule Workflow.RunningScenario do
              sms_sender,
              coupon_sender,
              star_rewarder,
-             stamp_rewarder
+             stamp_rewarder,
+             webhook_sender
            ) do
       scenario_run = %ScenarioRun{
         scenario_run
@@ -151,7 +153,8 @@ defmodule Workflow.RunningScenario do
         sms_sender,
         coupon_sender,
         star_rewarder,
-        stamp_rewarder
+        stamp_rewarder,
+        webhook_sender
       ) do
     if run_context_filter(filters, context_payload, clock) do
       case action do
@@ -178,6 +181,14 @@ defmodule Workflow.RunningScenario do
 
         %Action.AddStamp{} = action ->
           stamp_rewarder.add_stamp(
+            action,
+            context_payload
+          )
+
+          {:ok, inline_action}
+
+        %Action.OutgoingWebhook{} = action ->
+          webhook_sender.send_webhook(
             action,
             context_payload
           )

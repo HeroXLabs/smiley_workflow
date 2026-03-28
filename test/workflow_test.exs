@@ -31,6 +31,30 @@ defmodule WorkflowTest do
 
       {:ok, _scenario} = Workflow.create_new_scenario(params, Workflow.Repository.Mock)
     end
+
+    test "creates a form completed scenario from template" do
+      params = %NewScenarioParams{
+        workspace_id: "abc",
+        template_trigger_id: "step-form-response-created"
+      }
+
+      expect(Workflow.Repository.Mock, :create_new_scenario, fn dto ->
+        assert dto.trigger == :form_response_created
+        {:ok, build_scenario_dto([Workflow.new_step_dto("step-outgoing-webhook")])}
+      end)
+
+      assert {:ok, scenario} = Workflow.create_new_scenario(params, Workflow.Repository.Mock)
+      assert scenario.trigger_id == "step-1"
+    end
+  end
+
+  describe "#new_step_dto" do
+    test "builds an outgoing webhook action dto" do
+      step_dto = Workflow.new_step_dto("step-outgoing-webhook")
+
+      assert step_dto.action == "outgoing_webhook"
+      assert step_dto.title == "Send outgoing webhook"
+    end
   end
 
   describe "#compile_scenario" do
@@ -226,7 +250,7 @@ defmodule WorkflowTest do
         workspace_id: "abc"
       }
 
-      {:error, _err} =  Workflow.compile_scenario(scenario)
+      {:error, _err} = Workflow.compile_scenario(scenario)
     end
   end
 
@@ -235,8 +259,8 @@ defmodule WorkflowTest do
       scenario = build_scenario_dto([])
 
       Workflow.Repository.Mock
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:create_step, fn _scenario_id, step_dto ->
@@ -244,7 +268,7 @@ defmodule WorkflowTest do
         step = build_step_dto(step_dto, "step-1")
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
         assert attrs == %{ordered_action_ids: ["step-1"]}
         scenario = build_scenario_dto([Workflow.new_step_dto("step-filter")])
         {:ok, scenario}
@@ -263,8 +287,8 @@ defmodule WorkflowTest do
       scenario = build_scenario_dto([Workflow.new_step_dto("step-filter")])
 
       Workflow.Repository.Mock
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:create_step, fn _scenario_id, step_dto ->
@@ -272,9 +296,15 @@ defmodule WorkflowTest do
         step = build_step_dto(step_dto, "step-3")
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
         assert attrs == %{ordered_action_ids: ["step-2", "step-3"]}
-        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+
+        scenario =
+          build_scenario_dto([
+            Workflow.new_step_dto("step-filter"),
+            Workflow.new_step_dto("step-delay")
+          ])
+
         {:ok, scenario}
       end)
 
@@ -288,11 +318,15 @@ defmodule WorkflowTest do
     end
 
     test "add an emply action step to a scenario" do
-      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+      scenario =
+        build_scenario_dto([
+          Workflow.new_step_dto("step-filter"),
+          Workflow.new_step_dto("step-delay")
+        ])
 
       Workflow.Repository.Mock
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:create_step, fn _scenario_id, step_dto ->
@@ -300,9 +334,16 @@ defmodule WorkflowTest do
         step = build_step_dto(step_dto, "step-4")
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
         assert attrs == %{ordered_action_ids: ["step-2", "step-3", "step-4"]}
-        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay"), Workflow.new_step_dto("step-schedule-text")])
+
+        scenario =
+          build_scenario_dto([
+            Workflow.new_step_dto("step-filter"),
+            Workflow.new_step_dto("step-delay"),
+            Workflow.new_step_dto("step-schedule-text")
+          ])
+
         {:ok, scenario}
       end)
 
@@ -316,11 +357,15 @@ defmodule WorkflowTest do
     end
 
     test "insert an emply action step in the middle to a scenario" do
-      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+      scenario =
+        build_scenario_dto([
+          Workflow.new_step_dto("step-filter"),
+          Workflow.new_step_dto("step-delay")
+        ])
 
       Workflow.Repository.Mock
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:create_step, fn _scenario_id, step_dto ->
@@ -328,9 +373,16 @@ defmodule WorkflowTest do
         step = build_step_dto(step_dto, "step-4")
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
         assert attrs == %{ordered_action_ids: ["step-2", "step-4", "step-3"]}
-        scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay"), Workflow.new_step_dto("step-schedule-text")])
+
+        scenario =
+          build_scenario_dto([
+            Workflow.new_step_dto("step-filter"),
+            Workflow.new_step_dto("step-delay"),
+            Workflow.new_step_dto("step-schedule-text")
+          ])
+
         {:ok, scenario}
       end)
 
@@ -346,15 +398,20 @@ defmodule WorkflowTest do
 
   describe "#update_step" do
     test "replaces a step" do
-      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+      scenario =
+        build_scenario_dto([
+          Workflow.new_step_dto("step-filter"),
+          Workflow.new_step_dto("step-delay")
+        ])
+
       step = build_step_dto(Workflow.new_step_dto("step-filter"), "step-2")
 
       Workflow.Repository.Mock
       |> expect(:get_step, fn _id ->
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:update_step, fn _scenario_id, step_dto ->
@@ -372,7 +429,12 @@ defmodule WorkflowTest do
     end
 
     test "update value for a step" do
-      scenario = build_scenario_dto([Workflow.new_step_dto("step-filter"), Workflow.new_step_dto("step-delay")])
+      scenario =
+        build_scenario_dto([
+          Workflow.new_step_dto("step-filter"),
+          Workflow.new_step_dto("step-delay")
+        ])
+
       step = build_step_dto(Workflow.new_step_dto("step-filter"), "step-2")
 
       params = %UpdateStepParams{
@@ -386,8 +448,8 @@ defmodule WorkflowTest do
         assert step.id == id
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:update_step_value, fn step_id, value ->
@@ -412,15 +474,15 @@ defmodule WorkflowTest do
         assert step.id == id
         {:ok, step}
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
-        assert attrs ==  %{enabled: false}
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
+        assert attrs == %{enabled: false}
         {:ok, scenario}
       end)
       |> expect(:delete_step, fn id ->
         assert step.id == id
         :ok
       end)
-      |> expect(:update_scenario, fn _scenario_id, attrs -> 
+      |> expect(:update_scenario, fn _scenario_id, attrs ->
         assert attrs == %{ordered_action_ids: ["step-3"]}
         scenario = build_scenario_dto([Workflow.new_step_dto("step-delay")])
         {:ok, scenario}
@@ -433,7 +495,8 @@ defmodule WorkflowTest do
   defp build_scenario_dto(new_step_dtos) do
     trigger_step = trigger_step()
 
-    [_ | action_steps ] = steps =
+    [_ | action_steps] =
+      steps =
       Enum.reduce(new_step_dtos, [trigger_step], fn new_step_dto, steps ->
         step_num = Enum.count(steps) + 1
         steps ++ [build_step_dto(new_step_dto, "step-#{step_num}")]
