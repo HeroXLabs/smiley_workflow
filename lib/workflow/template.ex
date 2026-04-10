@@ -26,7 +26,13 @@ defmodule Workflow.Template do
     "employees.phone_number" => :string,
     "employees.first_name" => :string,
     "coupon.expire_date" => :date,
-    "has_upcoming_appointments" => :boolean
+    "has_upcoming_appointments" => :boolean,
+    "form_response.title" => :string,
+    "form_response.url" => :string,
+    "form_response.token" => :string,
+    "form_response.answer_count" => :number,
+    "form_response.answered_field_ids" => :selection,
+    "form_response.answered_field_titles" => :selection
   }
 
   def triggers() do
@@ -163,6 +169,38 @@ defmodule Workflow.Template do
             %{id: "plan_frequency", name: "Membership plan type", category: "string"}
           ]
         }
+      },
+      %TriggerTemplate{
+        id: "step-form-response-created",
+        title: "Form completed",
+        description: "Trigger when a form response is created",
+        type: "trigger",
+        trigger: "form_response_created",
+        context: %{
+          "customer" => [
+            %{id: "phone_number", name: "Customer phone number", category: "string"},
+            %{id: "first_name", name: "Customer first name", category: "string"},
+            %{id: "tags", name: "Customer tags", category: "array"},
+            %{id: "visits_count", name: "Number of visits", category: "number"},
+            %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{
+              id: "has_upcoming_appointments",
+              name: "Has upcoming appointments",
+              category: "boolean"
+            }
+          ],
+          "business" => [
+            %{id: "name", name: "Business name", category: "string"}
+          ],
+          "form_response" => [
+            %{id: "title", name: "Form title", category: "string"},
+            %{id: "token", name: "Response token", category: "string"},
+            %{id: "url", name: "Response URL", category: "string"},
+            %{id: "answer_count", name: "Answered question count", category: "number"},
+            %{id: "answered_field_ids", name: "Answered field ids", category: "selection"},
+            %{id: "answered_field_titles", name: "Answered field titles", category: "selection"}
+          ]
+        }
       }
     ]
   end
@@ -221,6 +259,14 @@ defmodule Workflow.Template do
         description: "Add stamps to a customer",
         type: "action",
         action: "add_stamp",
+        context: %{}
+      },
+      %ActionTemplate{
+        id: "step-outgoing-webhook",
+        title: "Send outgoing webhook",
+        description: "Send an HTTP POST request to an external service",
+        type: "action",
+        action: "outgoing_webhook",
         context: %{}
       }
     ]

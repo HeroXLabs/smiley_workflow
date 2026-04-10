@@ -12,6 +12,7 @@ defmodule Workflow.Step do
   def is_action_step?(%__MODULE__{step: %Action.SendCoupon{}}), do: true
   def is_action_step?(%__MODULE__{step: %Action.RewardStar{}}), do: true
   def is_action_step?(%__MODULE__{step: %Action.AddStamp{}}), do: true
+  def is_action_step?(%__MODULE__{step: %Action.OutgoingWebhook{}}), do: true
   def is_action_step?(_), do: false
 
   def is_trigger_step?(%__MODULE__{step: %Trigger{}}), do: true

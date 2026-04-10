@@ -114,6 +114,9 @@ defmodule Workflow.StepUpdate do
       %Step{step: %Action.AddStamp{}} ->
         UpdateAction.new("add_stamp", value)
 
+      %Step{step: %Action.OutgoingWebhook{}} ->
+        UpdateAction.new("outgoing_webhook", value)
+
       %Step{step: %Filter.Incomplete{}} ->
         UpdateFilter.new(value)
 
@@ -131,6 +134,9 @@ defmodule Workflow.StepUpdate do
 
       %Step{step: %Action.Incomplete{action: :add_stamp}} ->
         UpdateAction.new("add_stamp", value)
+
+      %Step{step: %Action.Incomplete{action: :outgoing_webhook}} ->
+        UpdateAction.new("outgoing_webhook", value)
     end
   end
 end
