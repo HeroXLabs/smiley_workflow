@@ -197,8 +197,8 @@ defmodule Workflow.Template do
             %{id: "token", name: "Response token", category: "string"},
             %{id: "url", name: "Response URL", category: "string"},
             %{id: "answer_count", name: "Answered question count", category: "number"},
-            %{id: "answered_field_ids", name: "Answered field ids", category: "selection"},
-            %{id: "answered_field_titles", name: "Answered field titles", category: "selection"}
+            %{id: "answered_field_ids", name: "Answered field ids", category: "string"},
+            %{id: "answered_field_titles", name: "Answered field titles", category: "string"}
           ]
         }
       }
