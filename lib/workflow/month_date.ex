@@ -1,22 +1,22 @@
-defmodule Workflow.Birthday do
+defmodule Workflow.MonthDate do
   @moduledoc """
-  Month-and-day birthday comparisons.
+  Month-and-day comparisons for a date that repeats every year.
 
-  The birth year is ignored. Feb 29 is observed on Feb 28 in a non-leap year,
-  so the anniversary still falls on a real date. Counting wraps around New
-  Year: a Jan 1 birthday is one day after Dec 31.
+  The year is ignored. Feb 29 is observed on Feb 28 in a non-leap year, so the
+  anniversary still falls on a real date. Counting wraps around New Year: a
+  Jan 1 date is one day after Dec 31.
   """
 
   @doc """
   Days from `today` until the next anniversary, including today as 0.
   """
   @spec days_until(Date.t(), Date.t()) :: non_neg_integer()
-  def days_until(%Date{} = birth_date, %Date{} = today) do
-    this_year = observe(birth_date, today.year)
+  def days_until(%Date{} = month_date, %Date{} = today) do
+    this_year = observe(month_date, today.year)
 
     next =
       if Date.compare(this_year, today) == :lt do
-        observe(birth_date, today.year + 1)
+        observe(month_date, today.year + 1)
       else
         this_year
       end

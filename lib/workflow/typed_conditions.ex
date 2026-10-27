@@ -6,7 +6,7 @@ defmodule Workflow.TypedConditions do
   @type field_type :: :string
                     | :number
                     | :date
-                    | :birthday
+                    | :month_date
                     | :boolean
                     | :selection
   @type field_name :: String.t
@@ -22,7 +22,7 @@ defmodule Workflow.TypedConditions do
                      | :number
                      | :ago
                      | :date
-                     | :birthday_ahead
+                     | :month_date_ahead
                      | :boolean
                      | :selection
   @type op :: {op_name, op_category}
@@ -66,8 +66,8 @@ defmodule Workflow.TypedConditions do
       "<<" => {:before, :ago},
       "==" => {:equal, :ago}
     },
-    birthday: %{
-      "<>" => {:within, :birthday_ahead}
+    month_date: %{
+      "<>" => {:within, :month_date_ahead}
     },
     number: %{
       "=" => {:equal, :number},
@@ -164,8 +164,8 @@ defmodule Workflow.TypedConditions do
             compare_number(op_name, op_value, raw_value)
           {{op_name, :string}, op_value} ->
             compare_string(op_name, op_value, raw_value)
-          {{:within, :birthday_ahead}, n_days} ->
-            compare_birthday_within(n_days, raw_value, date)
+          {{:within, :month_date_ahead}, n_days} ->
+            compare_month_date_within(n_days, raw_value, date)
         end
     end
   end
@@ -195,7 +195,7 @@ defmodule Workflow.TypedConditions do
       [field_name | rest] ->
         field_type = field_type_mapper.(field_name)
         case {field_type, rest} do
-          {field_type, [op, value]} when field_type in [:string, :date, :number, :selection, :birthday] ->
+          {field_type, [op, value]} when field_type in [:string, :date, :number, :selection, :month_date] ->
             with {:ok, {op_name, op_category}} <- with_op_mapping(field_type, op),
                  {:ok, value} <- convert_value(op_category, value) do
               {:ok, {{field_type, field_name}, {{op_name, op_category}, value}}}
@@ -232,7 +232,7 @@ defmodule Workflow.TypedConditions do
   defp convert_value(:number, value), do: parse_integer(value)
   defp convert_value(:ago, value), do: parse_integer(value)
 
-  defp convert_value(:birthday_ahead, value) do
+  defp convert_value(:month_date_ahead, value) do
     case parse_integer(value) do
       {:ok, n_days} when n_days > 0 -> {:ok, n_days}
       {:ok, _} -> {:error, :days_must_be_positive}
@@ -302,12 +302,12 @@ defmodule Workflow.TypedConditions do
     end
   end
 
-  # n_days counts today, so 1 matches only a birthday today.
-  defp compare_birthday_within(n_days, %Date{} = birth_date, today) do
-    Workflow.Birthday.days_until(birth_date, today) < n_days
+  # n_days counts today, so 1 matches only an anniversary today.
+  defp compare_month_date_within(n_days, %Date{} = month_date, today) do
+    Workflow.MonthDate.days_until(month_date, today) < n_days
   end
 
-  defp compare_birthday_within(_n_days, _raw_value, _today), do: false
+  defp compare_month_date_within(_n_days, _raw_value, _today), do: false
 
   defp compare_bool(:equal, true, true), do: true
   defp compare_bool(:equal, false, false), do: true
