@@ -27,6 +27,7 @@ defmodule Workflow.Template do
     "employees.first_name" => :string,
     "coupon.expire_date" => :date,
     "has_upcoming_appointments" => :boolean,
+    "birthday" => :birthday,
     "form_response.title" => :string,
     "form_response.url" => :string,
     "form_response.token" => :string,
@@ -50,6 +51,7 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{id: "birthday", name: "Customer birthday", category: "birthday"},
             %{
               id: "has_upcoming_appointments",
               name: "Has upcoming appointments",
@@ -77,6 +79,7 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{id: "birthday", name: "Customer birthday", category: "birthday"},
             %{
               id: "has_upcoming_appointments",
               name: "Has upcoming appointments",
@@ -115,6 +118,7 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{id: "birthday", name: "Customer birthday", category: "birthday"},
             %{
               id: "has_upcoming_appointments",
               name: "Has upcoming appointments",
@@ -153,6 +157,7 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{id: "birthday", name: "Customer birthday", category: "birthday"},
             %{
               id: "has_upcoming_appointments",
               name: "Has upcoming appointments",
@@ -183,6 +188,7 @@ defmodule Workflow.Template do
             %{id: "tags", name: "Customer tags", category: "array"},
             %{id: "visits_count", name: "Number of visits", category: "number"},
             %{id: "last_visit_at", name: "Last visit date", category: "date"},
+            %{id: "birthday", name: "Customer birthday", category: "birthday"},
             %{
               id: "has_upcoming_appointments",
               name: "Has upcoming appointments",

@@ -16,7 +16,8 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.Customer do
     :tags,
     :visits_count,
     :last_visit_at,
-    :has_upcoming_appointments
+    :has_upcoming_appointments,
+    :birth_date
   ]
 
   @type t :: %__MODULE__{
@@ -26,6 +27,7 @@ defmodule Workflow.RunningScenario.TriggerContextPayload.Customer do
           tags: list(String.t()),
           visits_count: integer,
           last_visit_at: DateTime.t() | nil,
-          has_upcoming_appointments: boolean
+          has_upcoming_appointments: boolean,
+          birth_date: Date.t() | nil
         }
 end
